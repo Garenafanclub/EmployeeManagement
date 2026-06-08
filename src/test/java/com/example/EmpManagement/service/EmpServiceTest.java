@@ -1,5 +1,9 @@
 package com.example.EmpManagement.service;
 
+import com.example.EmpManagement.DTOs.EmployeeRequestDTO;
+import com.example.EmpManagement.DTOs.EmployeeResponseDTO;
+import com.example.EmpManagement.Exceptions.DuplicateResourceException;
+import com.example.EmpManagement.Exceptions.ResourceNotFoundException;
 import com.example.EmpManagement.Model.Employee;
 import com.example.EmpManagement.Repository.EmpRepo;
 import com.example.EmpManagement.Service.Imp.EmpServiceImp;
@@ -9,6 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.util.List;
 import java.util.Optional;
@@ -101,10 +106,10 @@ public class EmpServiceTest {
 
 
         // ACT AND ASSERT...
-        RuntimeException exception = assertThrows(RuntimeException.class, ()->
+        RuntimeException exception = assertThrows(ResourceNotFoundException.class, ()->
                 empService.getById(nonExistingId));
 
-        assertEquals("Emp not found with id: " + nonExistingId, exception.getMessage());
+        assertEquals("Resource not found: Employee with id = 99", exception.getMessage());
     }
 
     @Test
@@ -122,14 +127,14 @@ public class EmpServiceTest {
     @Test
     void shouldThrowException_WhenEmailNotExist()
     {
-        String nonExistingEmail = "ab@gmail.com";
+        String nonExistingEmail = "abc@gmail.com";
 
         when(empRepo.findByEmail(nonExistingEmail)).thenReturn(Optional.empty());
 
-        RuntimeException exception = assertThrows(RuntimeException.class, ()->
+        RuntimeException exception = assertThrows(ResourceNotFoundException.class, ()->
                 empService.getEmpByEmail(nonExistingEmail));
 
-        assertEquals("Emp not found with email: " + nonExistingEmail, exception.getMessage());
+        assertEquals("Resource not found: Employee with email = abc@gmail.com", exception.getMessage());
     }
 
     @Test
@@ -137,8 +142,7 @@ public class EmpServiceTest {
     {
         // 1. ARRANGE  .... DATA PREPARATION....
         // Create the dummy data we will pass into the service...
-        Employee newEmployee = new Employee();
-        newEmployee.setId(101L);
+        EmployeeRequestDTO newEmployee = new EmployeeRequestDTO();
         newEmployee.setFirstName("Mayank");
         newEmployee.setEmail("abc@gmail.com");
 
@@ -152,7 +156,7 @@ public class EmpServiceTest {
 
         // 2. ACT
         // Call the actual method we are testing
-        Employee result = empService.createEmployee(newEmployee);
+        EmployeeResponseDTO result = empService.createEmployee(newEmployee);
 
         // 3. ASSERT
         // Verify the result is not null and has the ID assigned by our mock database
@@ -165,19 +169,20 @@ public class EmpServiceTest {
     void shouldThrowException_WhenCreatingEmployeeWithExistingEmail()
     {
         // 1. ARRANGE
-        Employee newEmployee = new Employee();
+        EmployeeRequestDTO newEmployee = new EmployeeRequestDTO();
         newEmployee.setEmail("abc@gmail.com");
 
         Employee existingEmployee = new Employee();
         existingEmployee.setEmail("abc@gmail.com");
 
-        when(empRepo.findByEmail("abc@gmail.com")).thenReturn(Optional.of(existingEmployee));
+        when(empRepo.save(any(Employee.class)))
+                .thenThrow(new DataIntegrityViolationException("Simulated Database Crash"));
 
         // 2. ACT & ASSERT
-        RuntimeException exception = assertThrows(RuntimeException.class, () ->
+        DuplicateResourceException exception = assertThrows(DuplicateResourceException.class, () ->
                 empService.createEmployee(newEmployee));
 
-        assertEquals("Emp already exists with email: abc@gmail.com",  exception.getMessage());
+        assertEquals("Duplicate resource: Employee with Email = abc@gmail.com already exists",  exception.getMessage());
     }
 
     @Test
@@ -198,7 +203,7 @@ public class EmpServiceTest {
         when(empRepo.save(any(Employee.class))).thenReturn(standardEmployee);
 
         // ACT....
-        Employee result = empService.updateEmployee(updatedEmployee, 101L);
+        EmployeeResponseDTO result = empService.updateEmployee(updatedEmployee, 101L);
 
         // Assert..
         assertEquals("Mayank", result.getFirstName());
@@ -242,9 +247,9 @@ public class EmpServiceTest {
     {
        when(empRepo.findById(99L)).thenReturn(Optional.empty());
 
-       RuntimeException exception = assertThrows(RuntimeException.class, () ->
+       RuntimeException exception = assertThrows(ResourceNotFoundException.class, () ->
                empService.deleteEmpById(99L));
 
-       assertEquals("Emp not found with id: 99", exception.getMessage());
+        assertEquals("Resource not found: Employee with id = 99", exception.getMessage());
     }
 }

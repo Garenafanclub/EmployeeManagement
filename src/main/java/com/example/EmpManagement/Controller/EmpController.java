@@ -1,5 +1,6 @@
 package com.example.EmpManagement.Controller;
 
+import com.example.EmpManagement.DTOs.EmployeeRequestDTO;
 import com.example.EmpManagement.Model.Employee;
 import com.example.EmpManagement.Service.EmpService;
 import jakarta.validation.Valid;
@@ -39,9 +40,9 @@ public class EmpController {
     }
 
     @PostMapping()
-    public ResponseEntity<Employee> createEmployee(@Valid @RequestBody Employee employee)
+    public ResponseEntity<Employee> createEmployee(@Valid @RequestBody EmployeeRequestDTO employeeRequestDTO)
     {
-         return ResponseEntity.status(HttpStatus.CREATED).body(empService.createEmployee(employee));
+         return ResponseEntity.status(HttpStatus.CREATED).body(empService.createEmployee(employeeRequestDTO));
     }
 
     @PutMapping("/id/{id}")

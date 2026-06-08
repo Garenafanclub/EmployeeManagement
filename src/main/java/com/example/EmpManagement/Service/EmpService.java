@@ -1,5 +1,7 @@
 package com.example.EmpManagement.Service;
 
+import com.example.EmpManagement.DTOs.EmployeeRequestDTO;
+import com.example.EmpManagement.DTOs.EmployeeResponseDTO;
 import com.example.EmpManagement.Model.Employee;
 import org.springframework.stereotype.Service;
 
@@ -13,9 +15,9 @@ public interface EmpService {
 
     Employee getEmpByEmail(String email);
 
-    Employee createEmployee(Employee employee);
+    EmployeeResponseDTO createEmployee(EmployeeRequestDTO employeeRequestDTO);
 
-    Employee updateEmployee(Employee employee, Long id);
+    EmployeeResponseDTO updateEmployee(Employee employee, Long id);
 
     void deleteEmpById(Long id);
 }

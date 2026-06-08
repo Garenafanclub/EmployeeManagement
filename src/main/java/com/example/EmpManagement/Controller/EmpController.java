@@ -2,6 +2,7 @@ package com.example.EmpManagement.Controller;
 
 import com.example.EmpManagement.Model.Employee;
 import com.example.EmpManagement.Service.EmpService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -32,19 +33,19 @@ public class EmpController {
     }
 
     @GetMapping("/email/{email}")
-    public ResponseEntity<Employee> getEmpByEmail(@PathVariable String email)
+    public ResponseEntity<Employee> getEmpByEmail(@Valid @PathVariable String email)
     {
         return ResponseEntity.ok(empService.getEmpByEmail(email));
     }
 
     @PostMapping()
-    public ResponseEntity<Employee> createEmployee(@RequestBody Employee employee)
+    public ResponseEntity<Employee> createEmployee(@Valid @RequestBody Employee employee)
     {
          return ResponseEntity.status(HttpStatus.CREATED).body(empService.createEmployee(employee));
     }
 
     @PutMapping("/id/{id}")
-    public ResponseEntity<Employee> updateEmployee(@RequestBody Employee employee, @PathVariable Long id)
+    public ResponseEntity<Employee> updateEmployee(@Valid @RequestBody Employee employee, @PathVariable Long id)
     {
         return ResponseEntity.ok(empService.updateEmployee(employee, id));
     }

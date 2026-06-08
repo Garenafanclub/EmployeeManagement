@@ -20,15 +20,25 @@ repositories {
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
-	compileOnly 'org.projectlombok:lombok'
-	runtimeOnly 'org.postgresql:postgresql'
+
+	// Validation API
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+
+	// Annotation processors — ORDER MATTERS: lombok → binding → mapstruct
 	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
-	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
-	testImplementation 'com.h2database:h2'
-	runtimeOnly 'com.h2database:h2'
+
+	// lombok is needed at compile time for the main code, but not at runtime
+	compileOnly 'org.projectlombok:lombok'
+
+	// H2 and PostgreSQL drivers are needed at runtime, but not at compile time
+	runtimeOnly 'org.postgresql:postgresql'
+
+	// Test dependencies
 	testCompileOnly 'org.projectlombok:lombok'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	testAnnotationProcessor 'org.projectlombok:lombok'
 }
 

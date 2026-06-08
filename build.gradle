@@ -29,11 +29,19 @@ dependencies {
 	// Annotation processors — ORDER MATTERS: lombok → binding → mapstruct
 	annotationProcessor 'org.projectlombok:lombok'
 
+	// MapStruct processor
+	annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+
+    // Lombok-MapStruct binding (ORDER MATTERS)
+	annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+
 	// lombok is needed at compile time for the main code, but not at runtime
 	compileOnly 'org.projectlombok:lombok'
 
 	// H2 and PostgreSQL drivers are needed at runtime, but not at compile time
 	runtimeOnly 'org.postgresql:postgresql'
+
+
 
 	// Test dependencies
 	testCompileOnly 'org.projectlombok:lombok'

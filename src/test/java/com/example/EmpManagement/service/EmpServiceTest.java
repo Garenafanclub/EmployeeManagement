@@ -63,7 +63,7 @@ public class EmpServiceTest {
         // Script the Mock to return the mocked list when findAll() is called
         when(empRepo.findAll()).thenReturn(mockedList);
 
-        List<Employee> result = empService.getAllEmp();
+        List<EmployeeResponseDTO> result = empService.getAllEmp();
 
         assertNotNull(result);
         assertEquals(2, result.size());
@@ -79,7 +79,7 @@ public class EmpServiceTest {
         when(empRepo.findAll()).thenReturn(List.of());
 
         // ACT..
-        List<Employee> result = empService.getAllEmp();
+        List<EmployeeResponseDTO> result = empService.getAllEmp();
 
         // ASSERT...
         assertNotNull(result);
@@ -92,7 +92,7 @@ public class EmpServiceTest {
         when(empRepo.findById(101L)).thenReturn(Optional.of(standardEmployee));
 
         // ACT...
-        Employee result = empService.getById(101L);
+        EmployeeResponseDTO result = empService.getById(101L);
 
         assertNotNull(result);
         assertEquals(101L, result.getId());
@@ -118,7 +118,7 @@ public class EmpServiceTest {
 
         when(empRepo.findByEmail(email)).thenReturn(Optional.of(existingEmployee));
 
-        Employee result = empService.getEmpByEmail(email);
+        EmployeeResponseDTO result = empService.getEmpByEmail(email);
 
         assertNotNull(result);
         assertEquals("mayank@gmail.com", result.getEmail());

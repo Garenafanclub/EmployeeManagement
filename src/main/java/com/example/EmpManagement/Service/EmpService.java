@@ -9,11 +9,11 @@ import java.util.List;
 
 public interface EmpService {
 
-    List<Employee> getAllEmp();
+    List<EmployeeResponseDTO> getAllEmp();
 
-    Employee getById(Long id);
+    EmployeeResponseDTO getById(Long id);
 
-    Employee getEmpByEmail(String email);
+    EmployeeResponseDTO getEmpByEmail(String email);
 
     EmployeeResponseDTO createEmployee(EmployeeRequestDTO employeeRequestDTO);
 

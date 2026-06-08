@@ -1,6 +1,7 @@
 package com.example.EmpManagement.Controller;
 
 import com.example.EmpManagement.DTOs.EmployeeRequestDTO;
+import com.example.EmpManagement.DTOs.EmployeeResponseDTO;
 import com.example.EmpManagement.Model.Employee;
 import com.example.EmpManagement.Service.EmpService;
 import jakarta.validation.Valid;
@@ -22,31 +23,31 @@ public class EmpController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Employee>> getAllEmp()
+    public ResponseEntity<List<EmployeeResponseDTO>> getAllEmp()
     {
         return ResponseEntity.ok(empService.getAllEmp());
     }
 
     @GetMapping("/id/{id}")
-    public ResponseEntity<Employee> getEmpById(@PathVariable Long id)
+    public ResponseEntity<EmployeeResponseDTO> getEmpById(@PathVariable Long id)
     {
         return ResponseEntity.ok(empService.getById(id));
     }
 
     @GetMapping("/email/{email}")
-    public ResponseEntity<Employee> getEmpByEmail(@Valid @PathVariable String email)
+    public ResponseEntity<EmployeeResponseDTO> getEmpByEmail(@Valid @PathVariable String email)
     {
         return ResponseEntity.ok(empService.getEmpByEmail(email));
     }
 
     @PostMapping()
-    public ResponseEntity<Employee> createEmployee(@Valid @RequestBody EmployeeRequestDTO employeeRequestDTO)
+    public ResponseEntity<EmployeeResponseDTO> createEmployee(@Valid @RequestBody EmployeeRequestDTO employeeRequestDTO)
     {
          return ResponseEntity.status(HttpStatus.CREATED).body(empService.createEmployee(employeeRequestDTO));
     }
 
     @PutMapping("/id/{id}")
-    public ResponseEntity<Employee> updateEmployee(@Valid @RequestBody Employee employee, @PathVariable Long id)
+    public ResponseEntity<EmployeeResponseDTO> updateEmployee(@Valid @RequestBody Employee employee, @PathVariable Long id)
     {
         return ResponseEntity.ok(empService.updateEmployee(employee, id));
     }

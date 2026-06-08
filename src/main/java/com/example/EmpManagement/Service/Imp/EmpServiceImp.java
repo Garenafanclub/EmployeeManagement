@@ -12,6 +12,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -28,22 +29,32 @@ public class EmpServiceImp implements EmpService {
     }
 
     @Override
-    public List<Employee> getAllEmp() {
-        return empRepo.findAll();
+    public List<EmployeeResponseDTO> getAllEmp() {
+        List<Employee> allEmployee = empRepo.findAll();
+        List<EmployeeResponseDTO> employeeResponseDTOS = new ArrayList<>();
+        for(Employee employee : allEmployee)
+        {
+            employeeResponseDTOS.add(employeeMapper.toResponseDTO(employee));
+        }
+        log.info("Total employees fetched: {}", employeeResponseDTOS.size());
+        return employeeResponseDTOS;
     }
 
     @Override
-    public Employee getById(Long id) {
+    public EmployeeResponseDTO getById(Long id) {
         log.info("Fetching employee with id: {}", id);
-        return empRepo.findById(id)
+        Employee savedEmp = empRepo.findById(id)
                 .orElseThrow(()-> new ResourceNotFoundException("Employee", "id", id));
+
+        return employeeMapper.toResponseDTO(savedEmp);
     }
 
     @Override
-    public Employee getEmpByEmail(String email) {
+    public EmployeeResponseDTO getEmpByEmail(String email) {
         log.info("Fetching employee with email: {}", email);
-        return empRepo.findByEmail(email)
+        Employee savedEmp = empRepo.findByEmail(email)
                 .orElseThrow(()-> new ResourceNotFoundException("Employee", "email", email));
+        return employeeMapper.toResponseDTO(savedEmp);
     }
 
     @Override

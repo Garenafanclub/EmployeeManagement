@@ -18,19 +18,11 @@ public class Employee {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "First name is required")
-    @Size(min = 2, max = 50, message = "First name must be between 2 and 50 characters")
     private String firstName;
-
     private String lastName;
-
-    @NotBlank(message = "Email is required")
-    @Email(message = "Email should be valid")
-    @Column(unique = true)
+    // THIS IS THE FIX: Tell PostgreSQL this column must be strictly unique!
+    @Column(unique = true, nullable = false)
     private String email;
-
-    @NotBlank(message = "Department Name is required")
     private String department;
-
     private Double salary;
 }

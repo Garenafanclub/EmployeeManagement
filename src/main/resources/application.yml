@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: EmployeeManagement
+
+server:
+  port: 8081
+  address: 127.0.0.1
+
+---
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/mayank
+    username: postgres
+    password: "00000"
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true

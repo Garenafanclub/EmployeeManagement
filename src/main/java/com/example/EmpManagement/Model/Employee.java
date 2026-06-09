@@ -1,9 +1,6 @@
 package com.example.EmpManagement.Model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -25,4 +22,6 @@ public class Employee {
     private String email;
     private String department;
     private Double salary;
+
+
 }

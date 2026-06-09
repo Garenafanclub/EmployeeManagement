@@ -3,13 +3,14 @@ package com.example.EmpManagement.Service;
 import com.example.EmpManagement.DTOs.EmployeeRequestDTO;
 import com.example.EmpManagement.DTOs.EmployeeResponseDTO;
 import com.example.EmpManagement.Model.Employee;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 public interface EmpService {
 
-    List<EmployeeResponseDTO> getAllEmp();
+    Page<EmployeeResponseDTO> getAllEmp(int page, int size, String sortBy, String direction);
 
     EmployeeResponseDTO getById(Long id);
 
@@ -17,7 +18,7 @@ public interface EmpService {
 
     EmployeeResponseDTO createEmployee(EmployeeRequestDTO employeeRequestDTO);
 
-    EmployeeResponseDTO updateEmployee(Employee employee, Long id);
+    EmployeeResponseDTO updateEmployee(EmployeeRequestDTO employee, Long id);
 
     void deleteEmpById(Long id);
 }

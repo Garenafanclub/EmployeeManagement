@@ -2,14 +2,12 @@ package com.example.EmpManagement.Controller;
 
 import com.example.EmpManagement.DTOs.EmployeeRequestDTO;
 import com.example.EmpManagement.DTOs.EmployeeResponseDTO;
-import com.example.EmpManagement.Model.Employee;
 import com.example.EmpManagement.Service.EmpService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/employee")
@@ -23,9 +21,13 @@ public class EmpController {
     }
 
     @GetMapping
-    public ResponseEntity<List<EmployeeResponseDTO>> getAllEmp()
+    public ResponseEntity<Page<EmployeeResponseDTO>> getAllEmp(
+            @RequestParam(defaultValue = "0", required = false)    int PageNumber,
+            @RequestParam(defaultValue = "2", required = false)   int PageSize,
+            @RequestParam(defaultValue = "id", required = false)   String sortBy,
+            @RequestParam(defaultValue = "asc", required = false)  String direction)
     {
-        return ResponseEntity.ok(empService.getAllEmp());
+        return ResponseEntity.ok(empService.getAllEmp(PageNumber, PageSize, sortBy, direction));
     }
 
     @GetMapping("/id/{id}")
@@ -47,7 +49,7 @@ public class EmpController {
     }
 
     @PutMapping("/id/{id}")
-    public ResponseEntity<EmployeeResponseDTO> updateEmployee(@Valid @RequestBody Employee employee, @PathVariable Long id)
+    public ResponseEntity<EmployeeResponseDTO> updateEmployee(@Valid @RequestBody EmployeeRequestDTO employee, @PathVariable Long id)
     {
         return ResponseEntity.ok(empService.updateEmployee(employee, id));
     }

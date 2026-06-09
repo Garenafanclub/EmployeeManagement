@@ -24,7 +24,7 @@ dependencies {
 	// Validation API
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation("org.mapstruct:mapstruct:1.6.3")
-
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
 	// Annotation processors — ORDER MATTERS: lombok → binding → mapstruct
 	annotationProcessor 'org.projectlombok:lombok'
@@ -41,10 +41,10 @@ dependencies {
 	// H2 and PostgreSQL drivers are needed at runtime, but not at compile time
 	runtimeOnly 'org.postgresql:postgresql'
 
-
-
 	// Test dependencies
 	testCompileOnly 'org.projectlombok:lombok'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	testImplementation 'org.springframework.boot:spring-boot-starter-actuator-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'

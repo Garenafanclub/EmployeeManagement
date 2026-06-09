@@ -8,8 +8,13 @@ import com.example.EmpManagement.Mapper.EmployeeMapper;
 import com.example.EmpManagement.Model.Employee;
 import com.example.EmpManagement.Repository.EmpRepo;
 import com.example.EmpManagement.Service.EmpService;
+import jakarta.transaction.Transactional;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -28,16 +33,45 @@ public class EmpServiceImp implements EmpService {
         this.employeeMapper = employeeMapper;
     }
 
+//    @Override
+//    public Page<EmployeeResponseDTO> getAllEmp(int PageNumber, int PageSize) {
+//        Pageable pageable = PageRequest.of(PageNumber, PageSize);
+//        Page<Employee> fetchPageFromDB = empRepo.findAll(pageable);
+//
+//        Page<EmployeeResponseDTO> responsePage = fetchPageFromDB.map(employeeMapper::toResponseDTO);
+//        log.info("Fetched page {} with size {}. Total elements in page: {}", PageNumber, PageSize, responsePage.getNumberOfElements());
+//        return responsePage;
+//        /*
+//        List<Employee> allEmployee = empRepo.findAll();
+//        List<EmployeeResponseDTO> employeeResponseDOS = new ArrayList<>();
+//        for(Employee employee : allEmployee)
+//        {
+//            employeeResponseDTOS.add(employeeMapper.toResponseDTO(employee));
+//        }
+//        log.info("Total employees fetched: {}", employeeResponseDTOS.size());
+//        return employeeResponseDOS;
+//        */
+//    }
+
     @Override
-    public List<EmployeeResponseDTO> getAllEmp() {
-        List<Employee> allEmployee = empRepo.findAll();
-        List<EmployeeResponseDTO> employeeResponseDTOS = new ArrayList<>();
-        for(Employee employee : allEmployee)
-        {
-            employeeResponseDTOS.add(employeeMapper.toResponseDTO(employee));
-        }
-        log.info("Total employees fetched: {}", employeeResponseDTOS.size());
-        return employeeResponseDTOS;
+    public Page<EmployeeResponseDTO> getAllEmp(int page, int size, String sortBy, String direction) {
+        log.info("Fetching employees — page: {}, size: {}, sortBy: {}, direction: {}",
+                page, size, sortBy, direction);
+
+        // Build sort direction
+        Sort sort = direction.equalsIgnoreCase("asc")
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+
+        // Build Pageable — page is 0-indexed (page 1 from client = page 0 here)
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        // Fetch page from DB, map each Employee → EmployeeResponseDTO
+        Page<Employee> result = empRepo.findAll(pageable);
+
+        log.info("Fetched page {} of employees. Total elements: {}", page, result.getTotalElements());
+
+        return result.map(employeeMapper::toResponseDTO);
     }
 
     @Override
@@ -89,7 +123,7 @@ public class EmpServiceImp implements EmpService {
     }
 
     @Override
-    public EmployeeResponseDTO updateEmployee(Employee employee, Long id) {
+    public EmployeeResponseDTO updateEmployee(EmployeeRequestDTO employee, Long id) {
 
             Employee existEmp = empRepo.findById(id)
                     .orElseThrow(()-> new RuntimeException("Emp not found with id: " + id));

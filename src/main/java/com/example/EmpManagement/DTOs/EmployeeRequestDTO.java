@@ -3,6 +3,7 @@ package com.example.EmpManagement.DTOs;
 import jakarta.persistence.Column;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,7 +27,7 @@ public class EmployeeRequestDTO {
     @Column(unique = true, nullable = false)
     private String email;
 
-    @NotBlank(message = "Department Name is required")
+    @NotNull(message = "Department ID is required")
     private Long departmentId;
 
     // ASSUMING AN ADMIN MAKING THIS REQUEST...

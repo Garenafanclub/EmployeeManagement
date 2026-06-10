@@ -12,7 +12,7 @@ public interface DepartmentMapper {
 
     // FRONTEND TO BACKEND...
     // JSON -> DepartmentRequestDTO -> Entity (Department)
-    @Mapping(target = "depId", ignore = true)
+    @Mapping(target = "id", ignore = true)
     Department toEntity(DepartmentRequestDTO requestDTO);
 
     // Backend to Frontend...
@@ -21,6 +21,6 @@ public interface DepartmentMapper {
 
 
     // Update Mapping...
-    @Mapping(target = "depId", ignore = true)
+    @Mapping(target = "id", ignore = true)
     void updateEntityFromDto(DepartmentRequestDTO dto, @MappingTarget Department entity);
 }

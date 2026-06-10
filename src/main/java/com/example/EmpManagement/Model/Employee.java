@@ -20,8 +20,8 @@ public class Employee {
 
     // THIS IS THE FIX: Tell PostgreSQL this column must be strictly unique!
     @Column(unique = true, nullable = false)
-
     private String email;
+
     private Double salary;
 
 

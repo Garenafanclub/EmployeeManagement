@@ -13,11 +13,11 @@ import lombok.*;
 public class Department {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long depId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @Column(unique = true, nullable = false)
-    private String depName;
+    private String name;
 
     private String description;
 

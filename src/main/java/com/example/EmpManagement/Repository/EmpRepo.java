@@ -1,10 +1,11 @@
 package com.example.EmpManagement.Repository;
 
 import com.example.EmpManagement.Model.Employee;
+import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -12,12 +13,18 @@ import java.util.Optional;
 @Repository
 public interface EmpRepo extends JpaRepository<Employee, Long> {
 
+    // CrudRepository --- ListCrudRepository --- PagingAndSortingRepository --- ListPagingAndSortingRepository...
+
     Optional<Employee> findByEmail(String email);
 
     boolean existsByEmail(String email);
 
+    @SuppressWarnings("NullableProblems")
+    Page<Employee> findAll(@NonNull Pageable pageable);
 
-    Page<Employee> findAll(Pageable pageable);
+    @Query("SELECT e FROM Employee e WHERE e.firstName LIKE :prefix%")
+    Page<Employee> searchByFirstName(String prefix, Pageable pageable);
+
 
     // The core idea is simple: instead of SELECT * FROM employee which loads all 50 (or 50,000) rows,
     // you always add LIMIT and OFFSET.

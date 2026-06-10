@@ -27,8 +27,8 @@ public class EmployeeRequestDTO {
     private String email;
 
     @NotBlank(message = "Department Name is required")
-    private String department;
+    private Long departmentId;
 
     // ASSUMING AN ADMIN MAKING THIS REQUEST...
-    private Double Salary;
+    private Double salary;
 }

@@ -61,4 +61,13 @@ public class EmpController {
         return "Successfully remove from the record..";
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<Page<EmployeeResponseDTO>> searchByName(
+            @RequestParam("letter") String letter,
+            @RequestParam(defaultValue = "0") int PageNumber,
+            @RequestParam(defaultValue = "2") int PageSize)
+    {
+        return ResponseEntity.ok(empService.searchEmployeeByName(letter, PageNumber, PageSize));
+    }
+
 }

@@ -15,5 +15,7 @@ public class EmployeeResponseDTO {
     private String firstName;
     private String lastName;
     private String email;
-    private String department;
+
+    // WHEN WE SEND THE EMPLOYEE TO THE FRONTEND IT SENDED WITH NESTED DEPARTMENT..
+    private DepartmentResponseDTO department;
 }

@@ -10,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/employee")
+@RequestMapping("${api.version}/employees")
 public class EmpController {
 
     private final EmpService empService;
@@ -30,13 +30,13 @@ public class EmpController {
         return ResponseEntity.ok(empService.getAllEmp(PageNumber, PageSize, sortBy, direction));
     }
 
-    @GetMapping("/id/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<EmployeeResponseDTO> getEmpById(@PathVariable Long id)
     {
         return ResponseEntity.ok(empService.getById(id));
     }
 
-    @GetMapping("/email/{email}")
+    @GetMapping("/{email}")
     public ResponseEntity<EmployeeResponseDTO> getEmpByEmail(@Valid @PathVariable String email)
     {
         return ResponseEntity.ok(empService.getEmpByEmail(email));
@@ -48,13 +48,13 @@ public class EmpController {
          return ResponseEntity.status(HttpStatus.CREATED).body(empService.createEmployee(employeeRequestDTO));
     }
 
-    @PutMapping("/id/{id}")
+    @PatchMapping("{id}")
     public ResponseEntity<EmployeeResponseDTO> updateEmployee(@Valid @RequestBody EmployeeRequestDTO employee, @PathVariable Long id)
     {
         return ResponseEntity.ok(empService.updateEmployee(employee, id));
     }
 
-    @DeleteMapping("/id/{id}")
+    @DeleteMapping("/{id}")
     public String deleteEmp(@PathVariable Long id)
     {
         empService.deleteEmpById(id);

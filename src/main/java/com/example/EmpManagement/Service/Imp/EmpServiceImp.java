@@ -2,6 +2,7 @@ package com.example.EmpManagement.Service.Imp;
 
 import com.example.EmpManagement.DTOs.EmployeeRequestDTO;
 import com.example.EmpManagement.DTOs.EmployeeResponseDTO;
+import com.example.EmpManagement.Exceptions.DuplicateResourceException;
 import com.example.EmpManagement.Exceptions.ResourceNotFoundException;
 import com.example.EmpManagement.Mapper.EmployeeMapper;
 import com.example.EmpManagement.Model.Department;
@@ -9,6 +10,7 @@ import com.example.EmpManagement.Model.Employee;
 import com.example.EmpManagement.Repository.DepRepo;
 import com.example.EmpManagement.Repository.EmpRepo;
 import com.example.EmpManagement.Service.EmpService;
+import com.sun.jdi.request.DuplicateRequestException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -77,6 +79,11 @@ public class EmpServiceImp implements EmpService {
     @Transactional
     public EmployeeResponseDTO createEmployee(EmployeeRequestDTO employeeRequestDTO) {
         log.info("Attempting to create Employee with email{}", employeeRequestDTO.getEmail());
+
+        if(empRepo.existsByEmail(employeeRequestDTO.getEmail()))
+        {
+            throw new DuplicateResourceException("Employee", "Email", employeeRequestDTO.getEmail());
+        }
 
         // Fetch the Department using the ID sent by the frontend
         Department department = depRepo.findById(employeeRequestDTO.getDepartmentId())

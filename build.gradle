@@ -18,38 +18,40 @@ repositories {
 }
 
 dependencies {
+
+	// ── Core ──────────────────────────────────────────────────────────────
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
-	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2'
-
-	// Validation API
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
-	implementation("org.mapstruct:mapstruct:1.6.3")
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
-	// Annotation processors — ORDER MATTERS: lombok → binding → mapstruct
-	annotationProcessor 'org.projectlombok:lombok'
+	// ── API Docs ──────────────────────────────────────────────────────────
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2'
 
-	// MapStruct processor
-	annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+	// ── MapStruct ─────────────────────────────────────────────────────────
+	implementation 'org.mapstruct:mapstruct:1.6.3'
 
-    // Lombok-MapStruct binding (ORDER MATTERS)
-	annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
-
-	// lombok is needed at compile time for the main code, but not at runtime
+	// ── Lombok ────────────────────────────────────────────────────────────
 	compileOnly 'org.projectlombok:lombok'
 
-	// H2 and PostgreSQL drivers are needed at runtime, but not at compile time
-	runtimeOnly 'org.postgresql:postgresql'
+	// ── Annotation Processors ─────────────────────────────────────────────
+	// ORDER IS CRITICAL — must be exactly: lombok → binding → mapstruct
+	// If mapstruct-processor runs before lombok, it can't see
+	// the getters/setters Lombok generates → silent null mapping bugs
+	annotationProcessor 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+	annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
 
-	// Test dependencies
-	testCompileOnly 'org.projectlombok:lombok'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-	testImplementation 'org.springframework.boot:spring-boot-starter-actuator-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	// ── Database ──────────────────────────────────────────────────────────
+	runtimeOnly 'org.postgresql:postgresql'
+	runtimeOnly 'com.h2database:h2'              // H2 for tests — in-memory DB
+
+	// ── Test ──────────────────────────────────────────────────────────────
 	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	testCompileOnly    'org.projectlombok:lombok'
 	testAnnotationProcessor 'org.projectlombok:lombok'
+	testRuntimeOnly    'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test') {

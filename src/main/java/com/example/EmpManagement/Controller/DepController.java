@@ -12,7 +12,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.net.URI;
 
 @RestController
-@RequestMapping("/api/department")
+@RequestMapping("${api.version}/departments")
 public class DepController {
 
     private final DepService departmentService;

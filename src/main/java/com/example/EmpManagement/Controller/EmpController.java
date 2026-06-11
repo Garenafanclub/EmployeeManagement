@@ -4,6 +4,7 @@ import com.example.EmpManagement.DTOs.EmployeeRequestDTO;
 import com.example.EmpManagement.DTOs.EmployeeResponseDTO;
 import com.example.EmpManagement.Service.EmpService;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("${api.version}/employees")
+@Slf4j
 public class EmpController {
 
     private final EmpService empService;
@@ -36,8 +38,8 @@ public class EmpController {
         return ResponseEntity.ok(empService.getById(id));
     }
 
-    @GetMapping("/{email}")
-    public ResponseEntity<EmployeeResponseDTO> getEmpByEmail(@Valid @PathVariable String email)
+    @GetMapping("/find")
+    public ResponseEntity<EmployeeResponseDTO> getEmpByEmail(@Valid @RequestParam String email)
     {
         return ResponseEntity.ok(empService.getEmpByEmail(email));
     }
@@ -55,10 +57,11 @@ public class EmpController {
     }
 
     @DeleteMapping("/{id}")
-    public String deleteEmp(@PathVariable Long id)
+    public ResponseEntity<Void> deleteEmp(@PathVariable Long id)
     {
+        log.info("DELETE /employees/{}", id);
         empService.deleteEmpById(id);
-        return "Successfully remove from the record..";
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/search")

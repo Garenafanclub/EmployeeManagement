@@ -7,7 +7,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
-@Mapper(componentModel = "spring") // telling mapstruct to make this spring bean...
+@Mapper(componentModel = "spring", uses = {DepartmentMapper.class, PfAccountMapper.class}) // telling mapstruct to make this spring bean...
 public interface EmployeeMapper {
 
     // Map requestDTO ---> Entity

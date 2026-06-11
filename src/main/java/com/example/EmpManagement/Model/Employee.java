@@ -18,7 +18,7 @@ public class Employee {
     private String firstName;
     private String lastName;
 
-    // THIS IS THE FIX: Tell PostgreSQL this column must be strictly unique!
+    // Tell PostgreSQL this column must be strictly unique!
     @Column(unique = true, nullable = false)
     private String email;
 

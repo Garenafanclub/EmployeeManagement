@@ -36,15 +36,13 @@ dependencies {
 
 	// ── Annotation Processors ─────────────────────────────────────────────
 	// ORDER IS CRITICAL — must be exactly: lombok → binding → mapstruct
-	// If mapstruct-processor runs before lombok, it can't see
-	// the getters/setters Lombok generates → silent null mapping bugs
 	annotationProcessor 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
 	annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
 
 	// ── Database ──────────────────────────────────────────────────────────
 	runtimeOnly 'org.postgresql:postgresql'
-	runtimeOnly 'com.h2database:h2'              // H2 for tests — in-memory DB
+	runtimeOnly 'com.h2database:h2'
 
 	// ── Test ──────────────────────────────────────────────────────────────
 	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'

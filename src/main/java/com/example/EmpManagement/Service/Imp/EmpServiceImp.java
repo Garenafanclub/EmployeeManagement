@@ -10,7 +10,6 @@ import com.example.EmpManagement.Model.Employee;
 import com.example.EmpManagement.Repository.DepRepo;
 import com.example.EmpManagement.Repository.EmpRepo;
 import com.example.EmpManagement.Service.EmpService;
-import com.sun.jdi.request.DuplicateRequestException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -40,12 +39,10 @@ public class EmpServiceImp implements EmpService {
         log.info("Fetching employees — page: {}, size: {}, sortBy: {}, direction: {}",
                 page, size, sortBy, direction);
 
-        // Build sort direction
         Sort sort = direction.equalsIgnoreCase("asc")
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
 
-        // Build Pageable — page is 0-indexed (page 1 from client = page 0 here)
         Pageable pageable = PageRequest.of(page, size, sort);
 
         // Fetch page from DB, map each Employee → EmployeeResponseDTO
@@ -111,7 +108,7 @@ public class EmpServiceImp implements EmpService {
             Department department = depRepo.findById(requestDTO.getDepartmentId())
                     .orElseThrow(()-> new ResourceNotFoundException("Deparment", "id", requestDTO.getDepartmentId()));
 
-            // Mapping from DTO --- ENTITY (only non-null fields from DTO will be updated in the entity)
+            // Mapping from DTO --- ENTITY
             employeeMapper.updateEntityFromDto(requestDTO, existEmp);
             existEmp.setDepartment(department);
 

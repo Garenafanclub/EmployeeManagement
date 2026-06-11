@@ -50,7 +50,7 @@ public class EmpController {
          return ResponseEntity.status(HttpStatus.CREATED).body(empService.createEmployee(employeeRequestDTO));
     }
 
-    @PatchMapping("{id}")
+    @PatchMapping("/{id}")
     public ResponseEntity<EmployeeResponseDTO> updateEmployee(@Valid @RequestBody EmployeeRequestDTO employee, @PathVariable Long id)
     {
         return ResponseEntity.ok(empService.updateEmployee(employee, id));

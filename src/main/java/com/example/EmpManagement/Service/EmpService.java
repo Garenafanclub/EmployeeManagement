@@ -20,6 +20,3 @@ public interface EmpService {
 
     Page<EmployeeResponseDTO> searchEmployeeByName(String prefix, int page, int size);
 }
-
-
-// duplication , null checks, validation and exception handling..., pagination...

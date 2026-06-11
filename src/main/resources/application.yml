@@ -2,14 +2,12 @@ spring:
   application:
     name: employee-management-service
 
-  # Database
   datasource:
     url: jdbc:postgresql://localhost:5432/mayank
     username: postgres
     password: "00000"
     driver-class-name: org.postgresql.Driver
 
-  # JPA / Hibernate
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
@@ -19,7 +17,6 @@ spring:
       hibernate:
         format_sql: true
 
-# API versioning — change here updates all controllers at once
 api:
   version: /api/v1
 

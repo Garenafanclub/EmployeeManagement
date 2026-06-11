@@ -1,9 +1,7 @@
 package com.example.EmpManagement.Model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Data
@@ -24,9 +22,15 @@ public class Employee {
 
     private Double salary;
 
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "dep_id" , nullable = false)
     private Department department;
+
+    @OneToOne(mappedBy = "employee",
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE}
+    )
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private PfAccount pfAccount;
 
 }

@@ -18,4 +18,6 @@ public class EmployeeResponseDTO {
 
     // WHEN WE SEND THE EMPLOYEE TO THE FRONTEND IT SENDED WITH NESTED DEPARTMENT...
     private DepartmentResponseDTO department;
+
+    private PFResponseDTO pfAccount;
 }

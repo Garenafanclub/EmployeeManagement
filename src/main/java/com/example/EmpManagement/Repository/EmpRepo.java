@@ -28,6 +28,8 @@ public interface EmpRepo extends JpaRepository<Employee, Long> {
     Page<Employee> searchByFirstName(String prefix, Pageable pageable);
 
 
+
+
     // The core idea is simple: instead of SELECT * FROM employee which loads all 50 (or 50,000) rows,
     // you always add LIMIT and OFFSET.
     // LIMIT = how many records per page.

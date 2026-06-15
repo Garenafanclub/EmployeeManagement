@@ -19,6 +19,8 @@ public interface EmpRepo extends JpaRepository<Employee, Long> {
 
     boolean existsByEmail(String email);
 
+    @Query(value = "Select e from Employee e LEFT JOIN FETCH e.pfAccount LEFT JOIN FETCH e.department",
+              countQuery = "select count(e) from Employee e")
     @SuppressWarnings("NullableProblems")
     Page<Employee> findAll(@NonNull Pageable pageable);
 

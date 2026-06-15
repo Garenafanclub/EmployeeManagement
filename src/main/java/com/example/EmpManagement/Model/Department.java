@@ -23,7 +23,7 @@ public class Department {
 
 
     @OneToMany(mappedBy = "department",
-            cascade = {CascadeType.PERSIST, CascadeType.MERGE},  //  ← safer than ALL
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true,  //  ← safer than ALL
             fetch = FetchType.LAZY)
     @ToString.Exclude          // ← prevent toString() infinite loop
     @EqualsAndHashCode.Exclude   // ← prevent equals/hashCode infinite loop

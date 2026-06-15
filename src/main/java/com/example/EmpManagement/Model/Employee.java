@@ -27,7 +27,7 @@ public class Employee {
     private Department department;
 
     @OneToOne(mappedBy = "employee",
-            cascade = {CascadeType.PERSIST, CascadeType.MERGE}
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE} , orphanRemoval = true
     )
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

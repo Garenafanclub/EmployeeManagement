@@ -19,4 +19,6 @@ public interface EmpService {
     void deleteEmpById(Long id);
 
     Page<EmployeeResponseDTO> searchEmployeeByName(String prefix, int page, int size);
+
+    Page<EmployeeResponseDTO> getEmployeeByDepartment(Long departmentId, int pageNumber, int pageSize, String sortBy, String direction);
 }

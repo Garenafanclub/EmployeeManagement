@@ -4,12 +4,15 @@ import com.example.EmpManagement.DTOs.PFRequestDTO;
 import com.example.EmpManagement.DTOs.PFResponseDTO;
 import com.example.EmpManagement.Exceptions.ResourceNotFoundException;
 import com.example.EmpManagement.Mapper.PfAccountMapper;
+import com.example.EmpManagement.Model.Department;
 import com.example.EmpManagement.Model.Employee;
 import com.example.EmpManagement.Model.PfAccount;
 import com.example.EmpManagement.Repository.EmpRepo;
 import com.example.EmpManagement.Repository.PfAccountRepo;
 import com.example.EmpManagement.Service.PFAccountService;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class PFAccountServiceImp implements PFAccountService {
@@ -37,5 +40,13 @@ public class PFAccountServiceImp implements PFAccountService {
         PfAccount savedPf = pfAccountRepo.save(pfAccount);
 
         return pfAccountMapper.toResponseDTO(savedPf);
+    }
+
+    @Override
+    public List<PFResponseDTO> getAllPfAccounts() {
+        List<PfAccount> pfAccountList = pfAccountRepo.findAll();
+        return pfAccountList.stream()
+                .map(pfAccountMapper::toResponseDTO)
+                .toList();
     }
 }

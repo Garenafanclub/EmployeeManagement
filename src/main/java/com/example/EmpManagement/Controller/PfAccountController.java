@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("${api.version}/pfaccounts")
 public class PfAccountController {
@@ -22,6 +24,12 @@ public class PfAccountController {
     public ResponseEntity<PFResponseDTO> createPFAccount(@Valid @RequestBody PFRequestDTO requestDTO)
     {
         return ResponseEntity.status(HttpStatus.CREATED).body(pfAccountService.createdPFAccount(requestDTO));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<PFResponseDTO>> getAllPfAccountsExists()
+    {
+        return ResponseEntity.ok(pfAccountService.getAllPfAccounts());
     }
 
 }

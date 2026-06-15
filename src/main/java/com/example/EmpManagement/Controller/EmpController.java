@@ -50,6 +50,7 @@ public class EmpController {
          return ResponseEntity.status(HttpStatus.CREATED).body(empService.createEmployee(employeeRequestDTO));
     }
 
+
     @PatchMapping("/{id}")
     public ResponseEntity<EmployeeResponseDTO> updateEmployee(@Valid @RequestBody EmployeeRequestDTO employee, @PathVariable Long id)
     {
@@ -73,4 +74,17 @@ public class EmpController {
         return ResponseEntity.ok(empService.searchEmployeeByName(letter, PageNumber, PageSize));
     }
 
+    @GetMapping("/department/{departmentId}")
+    public ResponseEntity<Page<EmployeeResponseDTO>> getEmployeeByDepartment(
+            @PathVariable Long departmentId,
+            @RequestParam(defaultValue = "0", required = false) int PageNumber,
+            @RequestParam(defaultValue = "2", required = false) int PageSize,
+            @RequestParam(defaultValue = "id", required = false)  String sortBy,
+            @RequestParam(defaultValue = "asc", required = false) String direction)
+    {
+        log.info("GET /employees/department/{}", departmentId);
+        Page<EmployeeResponseDTO> employees = empService.getEmployeeByDepartment(
+                departmentId, PageNumber, PageSize, sortBy, direction);
+        return ResponseEntity.ok(employees);
+    }
 }

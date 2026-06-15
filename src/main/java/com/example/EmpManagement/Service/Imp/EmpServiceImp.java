@@ -131,4 +131,27 @@ public class EmpServiceImp implements EmpService {
         Page<Employee> result = empRepo.searchByFirstName(prefix, pageable);
         return result.map(employeeMapper::toResponseDTO);
     }
+
+    @Override
+    public Page<EmployeeResponseDTO> getEmployeeByDepartment(Long departmentId, int pageNumber, int pageSize, String sortBy, String direction) {
+        log.info("Fetching employees by departmentId: {} — page: {}, size: {}, sortBy: {}, direction: {}",
+                departmentId, pageNumber, pageSize, sortBy, direction);
+
+        // 1. Verify if department exists first to throw your precise custom ResourceNotFoundException
+        if (!depRepo.existsById(departmentId)) {
+            throw new ResourceNotFoundException("Department", "id", departmentId);
+        }
+
+        // 2. Setup the precise sorting direction
+        Sort sort = direction.equalsIgnoreCase("asc")
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+
+        // 3. Request the precise subset page slice from the database
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, sort);
+        Page<Employee> result = empRepo.findByDepartmentId(departmentId, pageable);
+
+        log.info("Fetched page {} for department {}. Total items: {}", pageNumber, departmentId, result.getTotalElements());
+        return result.map(employeeMapper::toResponseDTO);
+    }
 }

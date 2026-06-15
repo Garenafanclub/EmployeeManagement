@@ -28,6 +28,13 @@ public interface EmpRepo extends JpaRepository<Employee, Long> {
     Page<Employee> searchByFirstName(String prefix, Pageable pageable);
 
 
+    @Query(value = "SELECT e FROM Employee e LEFT JOIN FETCH e.pfAccount LEFT JOIN FETCH e.department WHERE e.department.id = :departmentId",
+            countQuery = "SELECT COUNT(e) FROM Employee e WHERE e.department.id = :departmentId")
+    Page<Employee> findByDepartmentId(Long departmentId, Pageable pageable);
+
+
+
+
 
 
     // The core idea is simple: instead of SELECT * FROM employee which loads all 50 (or 50,000) rows,

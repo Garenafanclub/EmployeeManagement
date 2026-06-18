@@ -25,6 +25,7 @@ public class DepServiceImp implements DepService {
     @Override
     @Transactional
     public DepartmentResponseDTO createDepartment(DepartmentRequestDTO departmentRequestDTO) {
+
         Department department = departmentMapper.toEntity(departmentRequestDTO);
 
         Department savedDepartment = depRepo.save(department);

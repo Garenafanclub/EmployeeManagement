@@ -142,7 +142,7 @@ public class EmpServiceImp implements EmpService {
             throw new ResourceNotFoundException("Department", "id", departmentId);
         }
 
-        // 2. Setup the precise sorting direction
+        // 2. Set Up the precise sorting direction
         Sort sort = direction.equalsIgnoreCase("asc")
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();

@@ -18,8 +18,8 @@ import java.util.Map;
 @Slf4j
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(BaseException.class)
-    public ResponseEntity<ErrorResponse> handleBaseException(BaseException ex, HttpServletRequest httpServletRequest)
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleBaseException(ResourceNotFoundException ex, HttpServletRequest httpServletRequest)
     {
 
         log.warn("Business Exception [{}]: {} | path: {}", ex.getStatus(), ex.getMessage(), httpServletRequest.getRequestURI());

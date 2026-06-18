@@ -27,6 +27,11 @@ public class DepController {
         DepartmentResponseDTO savedDepartment = departmentService.createDepartment(departmentRequestDTO);
 
         // Dynamically build the URI for the newly created department
+
+        /*
+             name : "java",
+             des : "java r/d team"
+         */
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
                 .path("/{id}")

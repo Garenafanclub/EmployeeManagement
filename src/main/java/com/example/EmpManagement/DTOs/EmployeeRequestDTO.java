@@ -28,7 +28,7 @@ public class EmployeeRequestDTO {
     private String email;
 
     @NotNull(message = "Department ID is required")
-    private Long departmentId;
+    private Long departmentId;     // Employee table how do we fetch depID... employee.getdepartmentId()
 
     // ASSUMING AN ADMIN MAKING THIS REQUEST...
     private Double salary;

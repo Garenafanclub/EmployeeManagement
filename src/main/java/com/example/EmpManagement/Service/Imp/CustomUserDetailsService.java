@@ -3,7 +3,8 @@ package com.example.EmpManagement.Service.Imp;
 import com.example.EmpManagement.Model.Provider;
 import com.example.EmpManagement.Model.User;
 import com.example.EmpManagement.Repository.UserRepo;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -18,18 +19,11 @@ public class CustomUserDetailsService implements UserDetailsService {
         this.userRepo = userRepo;
     }
 
+    @SuppressWarnings("NullableProblems")
     @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(@NonNull String email) throws UsernameNotFoundException {
 
-        // 1. Look up the security badge in the decoupled users table
-        User user = userRepo.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Security identity not found for email: " + email));
-
-        // 2. Hand the badge to Spring Security
-        return org.springframework.security.core.userdetails.User.builder()
-                .username(user.getEmail())
-                .password(user.getPassword())
-                .authorities(String.valueOf(Provider.USER))
-                .build();
+        return userRepo.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Employee is not created with email: " + email));
     }
 }

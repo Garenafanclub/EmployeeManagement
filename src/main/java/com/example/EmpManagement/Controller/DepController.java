@@ -5,6 +5,7 @@ import com.example.EmpManagement.DTOs.DepartmentResponseDTO;
 import com.example.EmpManagement.Service.DepService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -22,6 +23,7 @@ public class DepController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<DepartmentResponseDTO> createDepartment(@Valid @RequestBody DepartmentRequestDTO departmentRequestDTO) {
 
         DepartmentResponseDTO savedDepartment = departmentService.createDepartment(departmentRequestDTO);

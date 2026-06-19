@@ -1,5 +1,6 @@
 package com.example.EmpManagement.Service.Imp;
 
+import com.example.EmpManagement.Config.HashedPass;
 import com.example.EmpManagement.DTOs.EmployeeRequestDTO;
 import com.example.EmpManagement.DTOs.EmployeeResponseDTO;
 import com.example.EmpManagement.Exceptions.DuplicateResourceException;
@@ -7,16 +8,23 @@ import com.example.EmpManagement.Exceptions.ResourceNotFoundException;
 import com.example.EmpManagement.Mapper.EmployeeMapper;
 import com.example.EmpManagement.Model.Department;
 import com.example.EmpManagement.Model.Employee;
+import com.example.EmpManagement.Model.Provider;
+import com.example.EmpManagement.Model.User;
 import com.example.EmpManagement.Repository.DepRepo;
 import com.example.EmpManagement.Repository.EmpRepo;
+import com.example.EmpManagement.Repository.UserRepo;
 import com.example.EmpManagement.Service.EmpService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import javax.xml.parsers.SAXParser;
+import java.security.SecureRandom;
 
 @Service
 @Log4j2
@@ -25,12 +33,16 @@ public class EmpServiceImp implements EmpService {
     private final EmpRepo empRepo;
     private final EmployeeMapper employeeMapper;
     private final DepRepo depRepo;
+    private final PasswordEncoder passwordEncoder;
+    private final UserRepo userRepo;
 
-    public EmpServiceImp(EmpRepo empRepo, EmployeeMapper employeeMapper, DepRepo depRepo)
+    public EmpServiceImp(EmpRepo empRepo, EmployeeMapper employeeMapper, DepRepo depRepo, PasswordEncoder passwordEncoder, UserRepo userRepo)
     {
         this.empRepo = empRepo;
         this.employeeMapper = employeeMapper;
         this.depRepo = depRepo;
+        this.passwordEncoder = passwordEncoder;
+        this.userRepo = userRepo;
     }
 
     @Override
@@ -86,6 +98,7 @@ public class EmpServiceImp implements EmpService {
         Department department = depRepo.findById(employeeRequestDTO.getDepartmentId())
                 .orElseThrow(()-> new ResourceNotFoundException("Department", "id", employeeRequestDTO.getDepartmentId()));
 
+
         // Map the DTO TO ENTITY
         Employee employee = employeeMapper.toEntity(employeeRequestDTO);
 
@@ -93,9 +106,22 @@ public class EmpServiceImp implements EmpService {
         employee.setDepartment(department);
 
         Employee savedEntity = empRepo.save(employee);
+
+        String rawPassword = generateSecureTemporaryPassword();
+        User newUser = User.builder()
+                .email(savedEntity.getEmail())
+                .password(passwordEncoder.encode(rawPassword))
+                .provider(Provider.USER)
+                .build();
+
+        userRepo.save(newUser);
+
         log.info("Employee created successfully with id: {}", savedEntity.getId());
 
-        return employeeMapper.toResponseDTO(savedEntity);
+        EmployeeResponseDTO responseDTO = employeeMapper.toResponseDTO(savedEntity);
+        responseDTO.setTemporaryPassword(rawPassword);
+
+        return responseDTO;
     }
 
     @Override
@@ -153,5 +179,20 @@ public class EmpServiceImp implements EmpService {
 
         log.info("Fetched page {} for department {}. Total items: {}", pageNumber, departmentId, result.getTotalElements());
         return result.map(employeeMapper::toResponseDTO);
+    }
+
+
+    private String generateSecureTemporaryPassword() {
+        // Defines the allowed characters for the password
+        final String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+        SecureRandom random = new SecureRandom();
+        StringBuilder password = new StringBuilder();
+
+        // Generates a random 10-character password
+        for (int i = 0; i < 10; i++) {
+            int randomIndex = random.nextInt(chars.length());
+            password.append(chars.charAt(randomIndex));
+        }
+        return password.toString();
     }
 }

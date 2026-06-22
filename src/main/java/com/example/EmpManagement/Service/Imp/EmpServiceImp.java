@@ -1,6 +1,5 @@
 package com.example.EmpManagement.Service.Imp;
 
-import com.example.EmpManagement.Config.HashedPass;
 import com.example.EmpManagement.DTOs.EmployeeRequestDTO;
 import com.example.EmpManagement.DTOs.EmployeeResponseDTO;
 import com.example.EmpManagement.Exceptions.DuplicateResourceException;
@@ -23,7 +22,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.xml.parsers.SAXParser;
 import java.security.SecureRandom;
 
 @Service

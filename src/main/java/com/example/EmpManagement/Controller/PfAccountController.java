@@ -6,6 +6,7 @@ import com.example.EmpManagement.Service.PFAccountService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,6 +22,7 @@ public class PfAccountController {
     }
 
     @PostMapping()
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PFResponseDTO> createPFAccount(@Valid @RequestBody PFRequestDTO requestDTO)
     {
         return ResponseEntity.status(HttpStatus.CREATED).body(pfAccountService.createdPFAccount(requestDTO));

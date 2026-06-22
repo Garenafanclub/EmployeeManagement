@@ -31,6 +31,7 @@ public class SecurityConfig {
                         // RESOURCES...
                         // We removed the permitAll() loopholes.
                         // EVERY single request must now have a valid login.
+                        .requestMatchers("/api/v1/auth/login").permitAll()
                         .anyRequest().authenticated()
                 )
                 .httpBasic(Customizer.withDefaults());

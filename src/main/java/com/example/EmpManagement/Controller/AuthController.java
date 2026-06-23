@@ -1,6 +1,6 @@
 package com.example.EmpManagement.Controller;
 
-import com.example.EmpManagement.Service.Imp.JWTService;
+import com.example.EmpManagement.Service.jwtSecurity.JWTService;
 import com.example.EmpManagement.DTOs.AuthRequestDTO;
 import com.example.EmpManagement.DTOs.AuthResponseDTO;
 import com.example.EmpManagement.DTOs.ChangePasswordRequestDTO;

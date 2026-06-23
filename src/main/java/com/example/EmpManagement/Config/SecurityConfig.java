@@ -1,6 +1,6 @@
 package com.example.EmpManagement.Config;
 
-import com.example.EmpManagement.Service.Imp.JWTAuthenticationFilter;
+import com.example.EmpManagement.Service.jwtSecurity.JWTAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;

@@ -1,4 +1,4 @@
-package com.example.EmpManagement.Service.Imp;
+package com.example.EmpManagement.Service.jwtSecurity;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

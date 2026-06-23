@@ -49,7 +49,7 @@ public class AuthController {
         // Extract the verified User details from the engine
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
-        String token = jwtService.generateToken();
+        String token = jwtService.generateToken(userDetails);
 
         assert userDetails != null;
         AuthResponseDTO responseDTO = AuthResponseDTO.builder()

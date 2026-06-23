@@ -2,12 +2,14 @@ spring:
   application:
     name: employee-management-service
 
+  # ── Database ───────────────────────────────────────────────────
   datasource:
-    url: jdbc:postgresql://localhost:5432/mayank
-    username: postgres
-    password: "00000"
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/mayank}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
+  # ── JPA / Hibernate ────────────────────────────────────────────
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
@@ -17,8 +19,15 @@ spring:
       hibernate:
         format_sql: true
 
+# ── API ──────────────────────────────────────────────────────────
 api:
-  version: api/v1
+  version: /api/v1
 
+# ── JWT ──────────────────────────────────────────────────────────
+jwt:
+  secret: ${JWT_SECRET}
+  expiration-ms: ${JWT_EXPIRATION_MS:3600000}
+
+# ── Server ───────────────────────────────────────────────────────
 server:
   port: 8081

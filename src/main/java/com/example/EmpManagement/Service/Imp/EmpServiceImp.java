@@ -33,14 +33,16 @@ public class EmpServiceImp implements EmpService {
     private final DepRepo depRepo;
     private final PasswordEncoder passwordEncoder;
     private final UserRepo userRepo;
+    private final OnboardingNotificationService notificationService;
 
-    public EmpServiceImp(EmpRepo empRepo, EmployeeMapper employeeMapper, DepRepo depRepo, PasswordEncoder passwordEncoder, UserRepo userRepo)
+    public EmpServiceImp(EmpRepo empRepo, EmployeeMapper employeeMapper, DepRepo depRepo, PasswordEncoder passwordEncoder, UserRepo userRepo, OnboardingNotificationService notificationService)
     {
         this.empRepo = empRepo;
         this.employeeMapper = employeeMapper;
         this.depRepo = depRepo;
         this.passwordEncoder = passwordEncoder;
         this.userRepo = userRepo;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -115,6 +117,9 @@ public class EmpServiceImp implements EmpService {
         userRepo.save(newUser);
 
         log.info("Employee created successfully with id: {}", savedEntity.getId());
+
+        // FIRE THE WEBHOOK! (Pass the RAW password so they can read it in the email)
+        notificationService.sendWelcomeEmail(savedEntity, rawPassword);
 
         EmployeeResponseDTO responseDTO = employeeMapper.toResponseDTO(savedEntity);
         responseDTO.setTemporaryPassword(rawPassword);

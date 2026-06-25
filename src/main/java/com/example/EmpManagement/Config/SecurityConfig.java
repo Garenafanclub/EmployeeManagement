@@ -43,6 +43,13 @@ public class SecurityConfig {
                         // We removed the permitAll() loopholes.
                         // EVERY single request must now have a valid login.
                         .requestMatchers("/api/v1/auth/login").permitAll()
+                        .requestMatchers(
+                                "/v3/api-docs",
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html"
+
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

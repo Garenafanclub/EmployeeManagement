@@ -29,6 +29,7 @@ public class PfAccountController {
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<PFResponseDTO>> getAllPfAccountsExists()
     {
         return ResponseEntity.ok(pfAccountService.getAllPfAccounts());

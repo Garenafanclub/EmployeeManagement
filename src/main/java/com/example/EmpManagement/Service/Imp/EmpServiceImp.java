@@ -14,6 +14,8 @@ import com.example.EmpManagement.Repository.EmpRepo;
 import com.example.EmpManagement.Repository.UserRepo;
 import com.example.EmpManagement.Service.EmpService;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -47,6 +49,7 @@ public class EmpServiceImp implements EmpService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "employees")
     public Page<EmployeeResponseDTO> getAllEmp(int page, int size, String sortBy, String direction) {
         log.info("Fetching employees — page: {}, size: {}, sortBy: {}, direction: {}",
                 page, size, sortBy, direction);
@@ -86,6 +89,7 @@ public class EmpServiceImp implements EmpService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "employees", allEntries = true)
     public EmployeeResponseDTO createEmployee(EmployeeRequestDTO employeeRequestDTO) {
         log.info("Attempting to create Employee with email{}", employeeRequestDTO.getEmail());
 

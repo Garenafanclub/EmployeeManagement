@@ -24,7 +24,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-cache'
 
 	// ── API Docs ──────────────────────────────────────────────────────────
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2'
@@ -59,4 +61,11 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+task runHashedPass(type: JavaExec) {
+    group = "Execution"
+    description = "Runs the BCrypt HashedPass utility class"
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.example.EmpManagement.Config.HashedPass'
 }

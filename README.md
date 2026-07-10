@@ -1,6 +1,6 @@
 # 🏢 Employee Management REST API
 
-A production-grade **Employee Management System** built with Spring Boot 4, featuring JWT-based stateless authentication, role-based access control, and a clean layered architecture.
+A production-grade **Employee Management System** built with Spring Boot 4, featuring JWT-based stateless authentication, role-based access control, Redis caching, and a clean layered architecture — with onboarding emails handed off to a separate Email Notification microservice.
 
 ---
 
@@ -13,6 +13,7 @@ A production-grade **Employee Management System** built with Spring Boot 4, feat
 | Security | Spring Security 6 + JWT (jjwt 0.12.x) |
 | Database | PostgreSQL |
 | ORM | Spring Data JPA / Hibernate |
+| Caching | Redis (Spring Data Redis + Spring Cache) |
 | Mapping | MapStruct 1.6.3 |
 | Boilerplate | Lombok |
 | API Docs | SpringDoc OpenAPI (Swagger UI) |
@@ -31,6 +32,8 @@ A production-grade **Employee Management System** built with Spring Boot 4, feat
 - **Smart Search** — Search employees by name prefix with pagination
 - **Department Filtering** — Fetch all employees belonging to a specific department
 - **PF Account Management** — Link Provident Fund accounts to employees
+- **Redis Caching** — Employee list served from Redis after the first hit; cache auto-evicted on every write
+- **Microservice Email Handoff** — New-hire welcome email delegated to a separate Email Notification microservice via `RestClient`
 - **Structured Error Responses** — Consistent JSON error format across all endpoints
 - **Custom Exception Hierarchy** — `ResourceNotFoundException`, `DuplicateResourceException`, `BadRequestException`
 - **Swagger UI** — Interactive API docs auto-generated at `/swagger-ui.html`
@@ -45,6 +48,8 @@ src/main/java/com/example/EmpManagement/
 ├── Config/
 │   ├── SecurityConfig.java          # Filter chain, CORS, session policy
 │   ├── JwtAuthEntryPoint.java       # 401 handler for missing/invalid tokens
+│   ├── OpenApiConfig.java           # Swagger UI + global bearer-auth scheme
+│   ├── AppConfig.java               # RestClient bean for service-to-service calls
 │   └── HashedPass.java              # CLI utility to BCrypt a password
 │
 ├── Controller/
@@ -59,9 +64,10 @@ src/main/java/com/example/EmpManagement/
 │   │   ├── JWTAuthenticationFilter.java  # Bearer token interceptor
 │   │   └── CustomUserDetailsService.java # Loads User from DB for Spring Security
 │   └── Imp/
-│       ├── EmpServiceImp.java
+│       ├── EmpServiceImp.java            # Employee logic + Redis caching
 │       ├── DepServiceImp.java
-│       └── PFAccountServiceImp.java
+│       ├── PFAccountServiceImp.java
+│       └── OnboardingNotificationService.java  # Hands off welcome email to Email microservice
 │
 ├── Model/
 │   ├── User.java                    # Implements UserDetails, drives auth
@@ -84,6 +90,7 @@ src/main/java/com/example/EmpManagement/
 
 - Java 17+
 - PostgreSQL running locally
+- Redis running locally on port `6379` (required for caching)
 - Gradle (or use the included `./gradlew` wrapper)
 
 ### 1. Clone the repository
@@ -109,7 +116,7 @@ The app requires two mandatory environment variables at startup:
 |---|---|---|
 | `DB_PASSWORD` | Your PostgreSQL password | ✅ Yes |
 | `JWT_SECRET` | Secret key for signing JWT tokens (min 32 chars) | ✅ Yes |
-| `DB_URL` | JDBC URL | No (defaults to `localhost:5432/mayank`) |
+| `DB_URL` | JDBC URL | No (defaults to `localhost:5433/mayank`) |
 | `DB_USERNAME` | DB username | No (defaults to `postgres`) |
 | `JWT_EXPIRATION_MS` | Token expiry in milliseconds | No (defaults to `3600000` = 1 hour) |
 
@@ -132,7 +139,7 @@ export JWT_SECRET=your-super-secret-key-minimum-32-characters
 The Admin account is seeded directly into the database. First, generate a BCrypt hash for your chosen password using the included utility:
 
 ```bash
-./gradlew run --args="YourAdminPassword"
+./gradlew runHashedPass --args="YourAdminPassword"
 ```
 
 Then insert the admin user into PostgreSQL:
@@ -220,7 +227,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 
 | Method | Endpoint | Auth Required | Description |
 |---|---|---|---|
-| `GET` | `/api/v1/pfaccounts` | ✅ Any | Get all PF accounts |
+| `GET` | `/api/v1/pfaccounts` | ✅ ADMIN | Get all PF accounts |
 | `POST` | `/api/v1/pfaccounts` | ✅ ADMIN | Create PF account for an employee |
 
 ---
@@ -258,7 +265,41 @@ When an admin creates an employee via `POST /api/v1/employees`:
 2. A `User` record is auto-created in the `users` table with role `USER`
 3. A cryptographically secure 10-character temporary password is generated
 4. The temporary password is returned **once** in the response — it is not stored in plain text
-5. The employee uses this password for their first login, then changes it via `/auth/change-password`
+5. A welcome-email request (with the temp password) is handed off to the **Email Notification microservice** (`http://localhost:8083/api/v1/notifications/welcome`) — employee creation never fails even if that service is down
+6. The employee uses this password for their first login, then changes it via `/auth/change-password`
+
+---
+
+## ⚡ Redis Caching
+
+The employee list is cached in Redis to avoid repeated database hits:
+
+- `@Cacheable("employees")` — first call hits PostgreSQL; repeat calls are served straight from Redis
+- `@CacheEvict("employees", allEntries = true)` — every write (create/update/delete) clears the cache so reads never go stale
+- Connection configured in `application.yml` (`localhost:6379`)
+
+Start Redis on Linux/WSL:
+
+```bash
+sudo service redis-server start
+redis-cli ping   # should reply: PONG
+```
+
+---
+
+## 🧪 Testing
+
+| Layer | Test class | Approach |
+|---|---|---|
+| Controller | `EmpControllerTest` | WebMvc slice test |
+| Service | `EmpServiceTest` | Unit tests with mocked dependencies |
+| Repository | `EmpRepoTest` | Data JPA test on in-memory H2 |
+
+Run the full suite:
+
+```bash
+./gradlew test
+```
 
 ---
 

@@ -220,7 +220,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 
 | Method | Endpoint | Auth Required | Description |
 |---|---|---|---|
-| `GET` | `/api/v1/pfaccounts` | ✅ Any | Get all PF accounts |
++| `GET` | `/api/v1/pfaccounts` | ✅ ADMIN | Get all PF accounts |
 | `POST` | `/api/v1/pfaccounts` | ✅ ADMIN | Create PF account for an employee |
 
 ---

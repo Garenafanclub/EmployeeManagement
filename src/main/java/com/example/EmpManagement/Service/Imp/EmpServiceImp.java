@@ -1,7 +1,10 @@
 package com.example.EmpManagement.Service.Imp;
 
+import com.example.EmpManagement.DTOs.EmployeeCreatedData;
 import com.example.EmpManagement.DTOs.EmployeeRequestDTO;
 import com.example.EmpManagement.DTOs.EmployeeResponseDTO;
+import com.example.EmpManagement.Event.EmployeeCreatedEvent;
+import com.example.EmpManagement.Event.HttpEmployeeEventPublisher;
 import com.example.EmpManagement.Exceptions.DuplicateResourceException;
 import com.example.EmpManagement.Exceptions.ResourceNotFoundException;
 import com.example.EmpManagement.Mapper.EmployeeMapper;
@@ -23,6 +26,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.time.Instant;
+import java.util.UUID;
 
 @Service
 @Log4j2
@@ -34,8 +39,9 @@ public class EmpServiceImp implements EmpService {
     private final PasswordEncoder passwordEncoder;
     private final UserRepo userRepo;
     private final OnboardingNotificationService notificationService;
+    private final HttpEmployeeEventPublisher httpEmployeeEventPublisher;
 
-    public EmpServiceImp(EmpRepo empRepo, EmployeeMapper employeeMapper, DepRepo depRepo, PasswordEncoder passwordEncoder, UserRepo userRepo, OnboardingNotificationService notificationService)
+    public EmpServiceImp(EmpRepo empRepo, EmployeeMapper employeeMapper, DepRepo depRepo, PasswordEncoder passwordEncoder, UserRepo userRepo, OnboardingNotificationService notificationService, HttpEmployeeEventPublisher httpEmployeeEventPublisher)
     {
         this.empRepo = empRepo;
         this.employeeMapper = employeeMapper;
@@ -43,6 +49,7 @@ public class EmpServiceImp implements EmpService {
         this.passwordEncoder = passwordEncoder;
         this.userRepo = userRepo;
         this.notificationService = notificationService;
+        this.httpEmployeeEventPublisher = httpEmployeeEventPublisher;
     }
 
     @Override
@@ -95,6 +102,7 @@ public class EmpServiceImp implements EmpService {
         }
 
         // Fetch the Department using the ID sent by the frontend
+        // IF THE DEPARTMENT DOES NOT EXIST, THROW A RESOURCE NOT FOUND EXCEPTION
         Department department = depRepo.findById(employeeRequestDTO.getDepartmentId())
                 .orElseThrow(()-> new ResourceNotFoundException("Department", "id", employeeRequestDTO.getDepartmentId()));
 
@@ -118,8 +126,23 @@ public class EmpServiceImp implements EmpService {
 
         log.info("Employee created successfully with id: {}", savedEntity.getId());
 
+        // Here we create the event object to be sent to the notification service...
+        EmployeeCreatedEvent event = new EmployeeCreatedEvent(
+                UUID.randomUUID(),
+                "employee.created",
+                Instant.now(),
+                new EmployeeCreatedData(
+                        employee.getId(),
+                        employee.getEmail(),
+                        department.getId(),
+                        rawPassword
+                )
+        );
+
+        httpEmployeeEventPublisher.publish(event);
+
         // FIRE THE WEBHOOK! (Pass the RAW password so they can read it in the email)
-        notificationService.sendWelcomeEmail(savedEntity, rawPassword);
+        // notificationService.sendWelcomeEmail(savedEntity, rawPassword);
 
         EmployeeResponseDTO responseDTO = employeeMapper.toResponseDTO(savedEntity);
         responseDTO.setTemporaryPassword(rawPassword);

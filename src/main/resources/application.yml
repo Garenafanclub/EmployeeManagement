@@ -31,3 +31,7 @@ jwt:
 # ── Server ───────────────────────────────────────────────────────
 server:
   port: 8081
+
+notification:
+  webhook:
+    url: ${NOTIFICATION_WEBHOOK_URL:http://localhost:8083/api/v1/webhooks/employee-created}

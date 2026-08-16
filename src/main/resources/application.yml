@@ -34,4 +34,4 @@ server:
 
 notification:
   webhook:
-    url: ${NOTIFICATION_WEBHOOK_URL:http://localhost:8083/api/v1/webhooks/employee-created}
+    url: ${NOTIFICATION_WEBHOOK_URL:http://localhost:8083/api/v1/webhooks/notification-requested}

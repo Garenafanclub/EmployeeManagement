@@ -5,6 +5,7 @@ import com.example.EmpManagement.DTOs.EmployeeRequestDTO;
 import com.example.EmpManagement.DTOs.EmployeeResponseDTO;
 import com.example.EmpManagement.Event.EmployeeCreatedEvent;
 import com.example.EmpManagement.Event.HttpEmployeeEventPublisher;
+import com.example.EmpManagement.Event.NotificationRequestEvent;
 import com.example.EmpManagement.Exceptions.DuplicateResourceException;
 import com.example.EmpManagement.Exceptions.ResourceNotFoundException;
 import com.example.EmpManagement.Mapper.EmployeeMapper;
@@ -126,23 +127,32 @@ public class EmpServiceImp implements EmpService {
 
         log.info("Employee created successfully with id: {}", savedEntity.getId());
 
+        UUID operationId = UUID.randomUUID();
         // Here we create the event object to be sent to the notification service...
-        EmployeeCreatedEvent event = new EmployeeCreatedEvent(
+        NotificationRequestEvent event = new NotificationRequestEvent(
                 UUID.randomUUID(),
-                "employee.created",
+                operationId,
+                "notification.requested",
                 Instant.now(),
-                new EmployeeCreatedData(
-                        employee.getId(),
-                        employee.getEmail(),
-                        department.getId(),
+                new NotificationRequestEvent.NotificationData(
+                        savedEntity.getId(),
+                        savedEntity.getEmail(),
+                        savedEntity.getId(),
                         rawPassword
                 )
         );
 
-        httpEmployeeEventPublisher.publish(event);
+        log.info("========== EVENT BEFORE PUBLISH ==========");
+        log.info("Event ID: {}", event.getEventId());
+        log.info("Operation ID: {}", event.getOperationId());
+        log.info("Event Type: {}", event.getEventType());
+        log.info("Employee ID: {}", event.getData().getEmpId());
+        log.info("Email: {}", event.getData().getEmail());
+        log.info("Department ID: {}", event.getData().getDepId());
+        log.info("Temporary Password: {}", event.getData().getTempPass());
+        log.info("==========================================");
 
-        // FIRE THE WEBHOOK! (Pass the RAW password so they can read it in the email)
-        // notificationService.sendWelcomeEmail(savedEntity, rawPassword);
+        httpEmployeeEventPublisher.publishNotify(event);
 
         EmployeeResponseDTO responseDTO = employeeMapper.toResponseDTO(savedEntity);
         responseDTO.setTemporaryPassword(rawPassword);
@@ -158,7 +168,7 @@ public class EmpServiceImp implements EmpService {
                     .orElseThrow(()-> new ResourceNotFoundException("Employee", "id", id));
 
             Department department = depRepo.findById(requestDTO.getDepartmentId())
-                    .orElseThrow(()-> new ResourceNotFoundException("Deparment", "id", requestDTO.getDepartmentId()));
+                    .orElseThrow(()-> new ResourceNotFoundException("Department", "id", requestDTO.getDepartmentId()));
 
             // Mapping from DTO --- ENTITY
             employeeMapper.updateEntityFromDto(requestDTO, existEmp);

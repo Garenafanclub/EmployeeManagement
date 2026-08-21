@@ -30,12 +30,12 @@
 
 ```mermaid
 flowchart LR
-    C[Client / Admin] -->|JWT| E[Employee Management<br/>:8081]
-    E -->|notification.requested<br/>POST JSON| N[Email Notification<br/>:8083]
-    N -->|202 Accepted| E
-    N -->|@Async| P[Process Notification]
-    P --> M[Mock Email Service]
-    P -->|notification.completed<br/>POST + X-Webhook-Secret| E
+    C["Client / Admin"] -->|"JWT"| E["Employee Management :8081"]
+    E -->|"notification.requested"| N["Email Notification :8083"]
+    N -->|"202 Accepted"| E
+    N -->|"@Async"| P["Process Notification"]
+    P --> M["Mock Email Service"]
+    P -->|"notification.completed"| E
 ```
 
 ### Services

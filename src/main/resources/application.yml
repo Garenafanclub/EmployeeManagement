@@ -35,3 +35,6 @@ server:
 notification:
   webhook:
     url: ${NOTIFICATION_WEBHOOK_URL:http://localhost:8083/api/v1/webhooks/notification-requested}
+
+webhook:
+  secret: ${WEBHOOK_SECRET:my-local-webhook-secret}

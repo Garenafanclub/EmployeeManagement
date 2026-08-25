@@ -21,10 +21,12 @@ public class SecurityConfig {
 
     private final JWTAuthenticationFilter jwtAuthenticationFilter;
     private final JwtAuthEntryPoint jwtAuthEntryPoint;
+    private final WebhookAuthenticationFilter webhookAuthenticationFilter;
 
-    public SecurityConfig(JWTAuthenticationFilter jwtAuthenticationFilter, JwtAuthEntryPoint jwtAuthEntryPoint) {
+    public SecurityConfig(JWTAuthenticationFilter jwtAuthenticationFilter, JwtAuthEntryPoint jwtAuthEntryPoint, WebhookAuthenticationFilter webhookAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.jwtAuthEntryPoint = jwtAuthEntryPoint;
+        this.webhookAuthenticationFilter = webhookAuthenticationFilter;
     }
 
     @Bean
@@ -50,8 +52,11 @@ public class SecurityConfig {
                                 "/swagger-ui.html"
 
                         ).permitAll()
+                        .requestMatchers("/api/v1/webhooks/notification-completed")
+                        .permitAll()
                         .anyRequest().authenticated()
                 )
+                .addFilterBefore(webhookAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

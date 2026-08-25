@@ -1,101 +1,341 @@
-# 🏢 Employee Management REST API
+# Employee Management Platform
 
-A production-grade **Employee Management System** built with Spring Boot 4, featuring JWT-based stateless authentication, role-based access control, and a clean layered architecture.
+> A Spring Boot backend for employee, department, user, and PF account management, built to demonstrate secure REST APIs and asynchronous service-to-service communication.
+
+> **What makes this project interesting:** employee onboarding is decoupled from notification processing. The Employee Service starts the notification workflow, the Notification Service processes it asynchronously, and a secured webhook reports completion back to the Employee Service.
+
+[![Java](https://img.shields.io/badge/Java-17-orange)](https://www.oracle.com/java/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.6-brightgreen)](https://spring.io/projects/spring-boot)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-database-336791)](https://www.postgresql.org/)
+[![Gradle](https://img.shields.io/badge/Gradle-build-02303A)](https://gradle.org/)
+
+## What it does
+
+- Employee CRUD with pagination, sorting, search, and department filtering
+- Department management
+- Provident Fund account management
+- JWT-based stateless authentication
+- Role-based authorization (`ADMIN`, `USER`, `GUEST`)
+- BCrypt password handling and password-change flow
+- PostgreSQL persistence through Spring Data JPA / Hibernate
+- MapStruct DTO ↔ entity mapping
+- Redis integration
+- Swagger / OpenAPI documentation
+- Structured exception handling
+- Asynchronous notification processing through a separate microservice
 
 ---
 
-## 🛠 Tech Stack
+## Architecture
 
-| Layer | Technology |
+```mermaid
+flowchart LR
+    C["Client / Admin"] -->|"JWT"| E["Employee Management :8081"]
+    E -->|"notification.requested"| N["Email Notification :8083"]
+    N -->|"202 Accepted"| E
+    N -->|"@Async"| P["Process Notification"]
+    P --> M["Mock Email Service"]
+    P -->|"notification.completed"| E
+```
+
+### Services
+
+**Employee Management** is the core service. It owns employees, users, departments, authentication, authorization, persistence, and the notification workflow.
+
+**Email Notification Service** is a separate Spring Boot service that receives notification requests, processes them asynchronously, dispatches the email, and sends a completion webhook back to Employee Management.
+
+Repository: [`Garenafanclub/email-notification-service`](https://github.com/Garenafanclub/email-notification-service)
+
+---
+
+## Asynchronous notification flow
+
+When an admin creates an employee:
+
+```text
+1. Client
+   |
+   | POST /api/v1/employees
+   | Authorization: Bearer <JWT>
+   v
+2. Employee Service
+   |
+   |-- validate request
+   |-- save Employee
+   |-- create User
+   |-- generate temporary password
+   |-- create notification.requested
+   |
+   | HTTP POST
+   v
+3. Notification Service
+   |
+   |-- receive notification.requested
+   |-- return 202 Accepted
+   |
+   |-- @Async processing
+   |      |
+   |      +--> dispatch email
+   |      |
+   |      +--> create notification.completed
+   |             |
+   |             | HTTP POST + X-Webhook-Secret
+   |             v
+   |
+4. Employee Service
+   |
+   |-- verify webhook secret
+   |-- receive completion event
+   +--> return 200 OK
+```
+
+### Why `202 Accepted`?
+
+`202 Accepted` means the Notification Service accepted the request for processing; it does **not** mean the email has already completed.
+
+This allows Employee Management to continue instead of blocking on a potentially slow notification operation.
+
+### Why `@Async`?
+
+The webhook request is handled on the HTTP thread, while notification work runs on an executor thread.
+
+Conceptually:
+
+```text
+HTTP thread
+    |
+    | receive request
+    | submit async work
+    +------------------------+
+                             |
+                             v
+                        Async thread
+                             |
+                             +--> process notification
+                             +--> send email
+```
+
+During debugging, the thread transition was visible from a request thread such as `http-nio-8083-exec-1` to an executor thread such as `task-1`.
+
+### Why a webhook?
+
+The completion webhook removes the need for Employee Management to poll the Notification Service repeatedly asking whether the operation finished.
+
+---
+
+## Event contract
+
+The services use explicit event models rather than passing arbitrary payloads.
+
+### `notification.requested`
+
+Sent by **Employee Management** to the **Notification Service**.
+
+```json
+{
+  "eventId": "uuid",
+  "operationId": "uuid",
+  "eventType": "notification.requested",
+  "occurredAt": "timestamp",
+  "data": {
+    "employeeId": 101,
+    "email": "employee@example.com",
+    "departmentId": 5,
+    "temporaryPassword": "..."
+  }
+}
+```
+
+### `notification.completed`
+
+Sent by the **Notification Service** to **Employee Management** after notification processing completes.
+
+```json
+{
+  "eventId": "uuid",
+  "operationId": "uuid",
+  "eventType": "notification.completed",
+  "occurredAt": "timestamp",
+  "data": {
+    "employeeId": 101,
+    "status": "SUCCESS"
+  }
+}
+```
+
+### `eventId` vs `operationId`
+
+| Field | Purpose |
 |---|---|
-| Framework | Spring Boot 4.0.6 |
+| `eventId` | Identifies a specific event message |
+| `operationId` | Correlates the complete notification workflow across both services |
+| `eventType` | Identifies what happened |
+| `occurredAt` | Records when the event was created |
+
+`operationId` is preserved from `notification.requested` through `notification.completed`, allowing the same business operation to be traced across both services.
+
+---
+
+## Security model
+
+There are two different authentication boundaries in this system.
+
+### User → Employee Service
+
+Users authenticate with JWT:
+
+```text
+POST /api/v1/auth/login
+        |
+        v
+       JWT
+        |
+        v
+Authorization: Bearer <token>
+        |
+        v
+Employee Management
+        |
+        v
+JWTAuthenticationFilter
+```
+
+The JWT is used for stateless user authentication and authorization.
+
+### Notification Service → Employee Service
+
+The completion webhook uses a dedicated service-to-service secret:
+
+```http
+X-Webhook-Secret: <shared-secret>
+```
+
+The request is checked by `WebhookAuthenticationFilter` before the completion webhook controller is reached.
+
+```text
+Notification Service
+        |
+        | X-Webhook-Secret
+        v
+WebhookAuthenticationFilter
+        |
+        +--> valid   → continue
+        |
+        +--> invalid → 401 Unauthorized
+```
+
+The webhook secret is intentionally separate from the JWT signing secret because it authenticates **service-to-service communication**, not a human user.
+
+> **Current implementation:** shared-secret webhook authentication. HMAC signing, replay protection, idempotency, retries, and stronger delivery guarantees are planned improvements.
+
+---
+
+## Webhook endpoints
+
+### Employee Management → Notification Service
+
+```http
+POST /api/v1/webhooks/notification-requested
+Content-Type: application/json
+```
+
+Response:
+
+```http
+202 Accepted
+```
+
+### Notification Service → Employee Management
+
+```http
+POST /api/v1/webhooks/notification-completed
+Content-Type: application/json
+X-Webhook-Secret: <shared-secret>
+```
+
+Response:
+
+```http
+200 OK
+```
+
+---
+
+## 🧩 Core backend components
+
+### Authentication
+
+The Employee Management Service uses:
+
+- JWT access tokens
+- BCrypt password hashing
+- `JWTAuthenticationFilter`
+- `CustomUserDetailsService`
+- Spring Security authorization rules
+
+### Persistence
+
+The application persists domain data using:
+
+- PostgreSQL
+- Spring Data JPA
+- Hibernate
+
+Core entities include:
+
+- `User`
+- `Employee`
+- `Department`
+- `PfAccount`
+
+### Mapping
+
+MapStruct is used for DTO ↔ entity conversion to keep API models separate from persistence models.
+
+### Caching
+
+Redis integration is available for cache-oriented application behavior and can be expanded as read-heavy workflows grow.
+
+---
+
+## 🛠️ Tech stack
+
+| Area | Technology |
+|---|---|
 | Language | Java 17 |
-| Security | Spring Security 6 + JWT (jjwt 0.12.x) |
+| Framework | Spring Boot 4.0.6 |
+| Web | Spring MVC |
+| Security | Spring Security + JWT |
 | Database | PostgreSQL |
 | ORM | Spring Data JPA / Hibernate |
+| Cache / Integration | Redis |
 | Mapping | MapStruct 1.6.3 |
 | Boilerplate | Lombok |
-| API Docs | SpringDoc OpenAPI (Swagger UI) |
+| API docs | SpringDoc OpenAPI / Swagger UI |
 | Monitoring | Spring Boot Actuator |
-| Build Tool | Gradle 9.4.1 |
+| HTTP client | Spring `RestClient` |
+| Async | Spring `@Async` |
+| Build | Gradle |
 
 ---
 
-## ✨ Features
-
-- **JWT Authentication** — Stateless token-based auth with configurable expiry
-- **Role-Based Access Control** — `ADMIN`, `USER`, and `GUEST` roles enforced via `@PreAuthorize`
-- **Auto Temporary Password** — Cryptographically secure 10-char password generated and returned on employee creation
-- **Password Management** — Authenticated users can change their own password
-- **Employee CRUD** — Full create, read, update, delete with pagination and sorting
-- **Smart Search** — Search employees by name prefix with pagination
-- **Department Filtering** — Fetch all employees belonging to a specific department
-- **PF Account Management** — Link Provident Fund accounts to employees
-- **Structured Error Responses** — Consistent JSON error format across all endpoints
-- **Custom Exception Hierarchy** — `ResourceNotFoundException`, `DuplicateResourceException`, `BadRequestException`
-- **Swagger UI** — Interactive API docs auto-generated at `/swagger-ui.html`
-
----
-
-## 📁 Project Structure
-
-```
-src/main/java/com/example/EmpManagement/
-│
-├── Config/
-│   ├── SecurityConfig.java          # Filter chain, CORS, session policy
-│   ├── JwtAuthEntryPoint.java       # 401 handler for missing/invalid tokens
-│   └── HashedPass.java              # CLI utility to BCrypt a password
-│
-├── Controller/
-│   ├── AuthController.java          # POST /auth/login, POST /auth/change-password
-│   ├── EmpController.java           # CRUD + search + filter endpoints
-│   ├── DepController.java           # Department endpoints
-│   └── PfAccountController.java     # PF Account endpoints
-│
-├── Service/
-│   ├── jwtSecurity/
-│   │   ├── JWTService.java          # Token generation and validation
-│   │   ├── JWTAuthenticationFilter.java  # Bearer token interceptor
-│   │   └── CustomUserDetailsService.java # Loads User from DB for Spring Security
-│   └── Imp/
-│       ├── EmpServiceImp.java
-│       ├── DepServiceImp.java
-│       └── PFAccountServiceImp.java
-│
-├── Model/
-│   ├── User.java                    # Implements UserDetails, drives auth
-│   ├── Employee.java
-│   ├── Department.java
-│   ├── PfAccount.java
-│   └── Provider.java                # Enum: ADMIN | USER | GUEST
-│
-├── DTOs/                            # Request and Response DTOs
-├── Mapper/                          # MapStruct mappers
-├── Repository/                      # Spring Data JPA repositories
-└── Exceptions/                      # Custom exceptions + GlobalExceptionHandler
-```
-
----
-
-## 🚀 Getting Started
+## 🚀 Getting started
 
 ### Prerequisites
 
 - Java 17+
-- PostgreSQL running locally
-- Gradle (or use the included `./gradlew` wrapper)
+- PostgreSQL
+- Redis
+- Git
 
-### 1. Clone the repository
+### 1. Clone
 
 ```bash
 git clone https://github.com/Garenafanclub/EmployeeManagement.git
 cd EmployeeManagement
 ```
 
-### 2. Set up PostgreSQL
-
-Create a database named `mayank` (or change the name in `application.yml`):
+### 2. Create the database
 
 ```sql
 CREATE DATABASE mayank;
@@ -103,165 +343,334 @@ CREATE DATABASE mayank;
 
 ### 3. Configure environment variables
 
-The app requires two mandatory environment variables at startup:
+Required:
 
-| Variable | Description | Required |
-|---|---|---|
-| `DB_PASSWORD` | Your PostgreSQL password | ✅ Yes |
-| `JWT_SECRET` | Secret key for signing JWT tokens (min 32 chars) | ✅ Yes |
-| `DB_URL` | JDBC URL | No (defaults to `localhost:5432/mayank`) |
-| `DB_USERNAME` | DB username | No (defaults to `postgres`) |
-| `JWT_EXPIRATION_MS` | Token expiry in milliseconds | No (defaults to `3600000` = 1 hour) |
-
-**In IntelliJ:** Run → Edit Configurations → Environment Variables → add:
-```
+```text
 DB_PASSWORD=your_db_password
-JWT_SECRET=your-super-secret-key-minimum-32-characters
+JWT_SECRET=your-secret-key-at-least-32-characters
 ```
 
-**In terminal:**
-```bash
-export DB_PASSWORD=your_db_password
-export JWT_SECRET=your-super-secret-key-minimum-32-characters
+Common overrides:
+
+```text
+DB_URL=jdbc:postgresql://localhost:5432/mayank
+DB_USERNAME=postgres
+JWT_EXPIRATION_MS=3600000
+NOTIFICATION_WEBHOOK_URL=http://localhost:8083/api/v1/webhooks/notification-requested
+WEBHOOK_SECRET=your-shared-webhook-secret
 ```
 
-> ⚠️ `JWT_SECRET` must be **at least 32 characters**. A shorter key causes a `WeakKeyException` on startup.
+> Do **not** commit real secrets to Git.
 
-### 4. Create the Admin user
+### 4. Seed an admin user
 
-The Admin account is seeded directly into the database. First, generate a BCrypt hash for your chosen password using the included utility:
+Use the project's BCrypt password hashing utility to generate a password hash locally, then insert the administrator into PostgreSQL.
 
-```bash
-./gradlew run --args="YourAdminPassword"
-```
-
-Then insert the admin user into PostgreSQL:
+Example:
 
 ```sql
 INSERT INTO users (email, password, provider)
-VALUES ('admin@company.com', '<bcrypt_hash_from_above>', 'ADMIN');
+VALUES ('admin@company.com', '<bcrypt_hash>', 'ADMIN');
 ```
 
-### 5. Run the application
+> Generate the hash locally. Do not commit plaintext passwords or secrets.
+
+### 5. Start Employee Management
 
 ```bash
 ./gradlew bootRun
 ```
 
-The API will be available at `http://localhost:8081/api/v1`
-Swagger UI available at `http://localhost:8081/swagger-ui.html`
+API base:
+
+```text
+http://localhost:8081/api/v1
+```
+
+Swagger UI:
+
+```text
+http://localhost:8081/swagger-ui.html
+```
+
+### 6. Start the Notification Service
+
+```bash
+git clone https://github.com/Garenafanclub/email-notification-service.git
+cd email-notification-service
+./gradlew bootRun
+```
+
+Notification Service:
+
+```text
+http://localhost:8083
+```
+
+Set the same `WEBHOOK_SECRET` value in both services.
 
 ---
 
-## 🔐 Authentication Flow
+## 🧪 End-to-end verification
 
-All endpoints (except `/auth/login`) require a valid JWT token.
+Run both services and create one employee.
 
-**Step 1 — Login to get a token:**
-```http
-POST /api/v1/auth/login
-Content-Type: application/json
+Expected flow:
 
-{
-  "email": "admin@company.com",
-  "password": "YourAdminPassword"
-}
+```text
+Employee created
+      |
+      v
+notification.requested
+      |
+      v
+202 Accepted
+      |
+      v
+@Async processing
+      |
+      v
+Mock email dispatch
+      |
+      v
+notification.completed
+      |
+      v
+Webhook secret validation
+      |
+      v
+Completion webhook
+      |
+      v
+200 OK
 ```
 
-**Response:**
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiJ9...",
-  "email": "admin@company.com",
-  "role": "ROLE_ADMIN"
-}
-```
-
-**Step 2 — Use the token on all subsequent requests:**
-```http
-GET /api/v1/employees
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
-```
+For a complete verification, confirm that the same `operationId` appears in both `notification.requested` and `notification.completed`.
 
 ---
 
-## 📡 API Reference
+## 🔑 API quick reference
 
-### Auth
+### Authentication
 
-| Method | Endpoint | Auth Required | Description |
-|---|---|---|---|
-| `POST` | `/api/v1/auth/login` | ❌ | Login and receive JWT token |
-| `POST` | `/api/v1/auth/change-password` | ✅ Any | Change your own password |
+| Method | Endpoint | Auth |
+|---|---|---|
+| `POST` | `/api/v1/auth/login` | Public |
+| `POST` | `/api/v1/auth/change-password` | JWT |
 
 ### Employees
 
-| Method | Endpoint | Auth Required | Description |
-|---|---|---|---|
-| `GET` | `/api/v1/employees` | ✅ Any | Get all employees (paginated) |
-| `GET` | `/api/v1/employees/{id}` | ✅ Any | Get employee by ID |
-| `GET` | `/api/v1/employees/find?email=` | ✅ Any | Get employee by email |
-| `GET` | `/api/v1/employees/search?letter=` | ✅ Any | Search employees by name prefix (paginated) |
-| `GET` | `/api/v1/employees/department/{id}` | ✅ Any | Get employees by department (paginated) |
-| `POST` | `/api/v1/employees` | ✅ ADMIN | Create new employee |
-| `PATCH` | `/api/v1/employees/{id}` | ✅ Any | Update employee |
-| `DELETE` | `/api/v1/employees/{id}` | ✅ ADMIN | Delete employee |
-
-**Pagination query params:** `PageNumber` (default: 0), `PageSize` (default: 2), `sortBy` (default: `id`), `direction` (`asc`/`desc`)
+| Method | Endpoint | Auth |
+|---|---|---|
+| `GET` | `/api/v1/employees` | JWT |
+| `GET` | `/api/v1/employees/{id}` | JWT |
+| `GET` | `/api/v1/employees/find?email=` | JWT |
+| `GET` | `/api/v1/employees/search?letter=` | JWT |
+| `GET` | `/api/v1/employees/department/{id}` | JWT |
+| `POST` | `/api/v1/employees` | ADMIN |
+| `PATCH` | `/api/v1/employees/{id}` | JWT |
+| `DELETE` | `/api/v1/employees/{id}` | ADMIN |
 
 ### Departments
 
-| Method | Endpoint | Auth Required | Description |
-|---|---|---|---|
-| `GET` | `/api/v1/departments` | ✅ Any | Get all departments |
-| `POST` | `/api/v1/departments` | ✅ ADMIN | Create a new department |
+| Method | Endpoint | Auth |
+|---|---|---|
+| `GET` | `/api/v1/departments` | JWT |
+| `POST` | `/api/v1/departments` | ADMIN |
 
 ### PF Accounts
 
-| Method | Endpoint | Auth Required | Description |
-|---|---|---|---|
-| `GET` | `/api/v1/pfaccounts` | ✅ Any | Get all PF accounts |
-| `POST` | `/api/v1/pfaccounts` | ✅ ADMIN | Create PF account for an employee |
+| Method | Endpoint | Auth |
+|---|---|---|
+| `GET` | `/api/v1/pfaccounts` | ADMIN |
+| `POST` | `/api/v1/pfaccounts` | ADMIN |
+
+For complete request and response schemas, use Swagger UI.
 
 ---
 
-## ⚠️ Error Response Format
+## 🐛 Engineering notes & debugging lessons
 
-All errors return a consistent JSON structure:
+This project was also used to understand and debug a real distributed workflow end-to-end.
 
-```json
-{
-  "timeStamp": "2025-06-19T10:30:00",
-  "status": 404,
-  "error": "Not Found",
-  "message": "Employee not found with id: 99",
-  "path": "/api/v1/employees/99"
-}
+### JSON contract mismatch
+
+A service boundary exposed a mismatch between field names in the two event models. The producer and consumer had different property names for the same data, which caused some fields to deserialize as `null`.
+
+The fix was to standardize the event contract across both services.
+
+**Lesson:** a distributed service contract is the JSON crossing the network, not the Java class that exists inside one service.
+
+### `401 Unauthorized`
+
+The completion webhook initially failed because Employee Management required normal JWT authentication while the Notification Service was making a service-to-service request.
+
+**Resolution:** a dedicated webhook secret and `WebhookAuthenticationFilter` were introduced.
+
+### Spring Security filter ordering
+
+Adding a custom filter relative to another custom filter caused a Spring Security filter-order configuration error.
+
+**Lesson:** position custom filters relative to framework-managed filters with a known order.
+
+### Endpoint mismatch
+
+The completion request initially targeted:
+
+```text
+/api/v1/webhooks/notification-completed
 ```
 
-| Status | Scenario |
-|---|---|
-| `401 Unauthorized` | Missing, expired, or invalid JWT |
-| `403 Forbidden` | Valid token but insufficient role |
-| `404 Not Found` | Resource not found |
-| `409 Conflict` | Duplicate email or DB constraint violation |
-| `400 Bad Request` | Validation failure (returns field-level map) |
-| `500 Internal Server Error` | Unexpected server error |
+while the receiver was mapped to:
+
+```text
+/api/v1/webhook/notification-completed
+```
+
+The singular/plural mismatch caused the route not to resolve.
+
+**Lesson:** HTTP contracts across services must match exactly.
+
+### Controller breakpoint not hit
+
+A webhook controller breakpoint did not trigger during the original `401` failure.
+
+The reason: Spring Security rejected the request **before the controller was reached**.
+
+**Lesson:** when a controller breakpoint is not hit, inspect filters, security, routing, and other earlier pipeline stages.
+
+### Debugging asynchronous execution
+
+The debugger showed:
+
+```text
+HTTP thread
+http-nio-8083-exec-1
+        |
+        v
+Spring @Async proxy
+        |
+        v
+Executor thread
+task-1
+```
+
+This made the asynchronous execution boundary visible instead of treating `@Async` as a black box.
 
 ---
 
-## 👤 Employee Creation Flow
+## 🧭 Current status
 
-When an admin creates an employee via `POST /api/v1/employees`:
+### Implemented
 
-1. Employee record is saved to the `employee` table
-2. A `User` record is auto-created in the `users` table with role `USER`
-3. A cryptographically secure 10-character temporary password is generated
-4. The temporary password is returned **once** in the response — it is not stored in plain text
-5. The employee uses this password for their first login, then changes it via `/auth/change-password`
+- Employee / department / user / PF account management
+- JWT authentication and authorization
+- PostgreSQL persistence
+- DTO ↔ entity mapping
+- Redis integration
+- Swagger / OpenAPI
+- Employee → Notification webhook
+- `202 Accepted` asynchronous handoff
+- `@Async` notification processing
+- Mock email dispatch
+- Notification → Employee completion webhook
+- Dedicated webhook authentication
+- `operationId` correlation across both services
+
+### Planned
+
+- Idempotent webhook processing
+- Retry and exponential backoff
+- Timeouts and failure handling
+- HMAC webhook signatures
+- Replay protection
+- Transactional Outbox pattern
+- Durable message broker integration
+- Distributed tracing / OpenTelemetry
+- Real email provider integration
+- Broader automated integration testing
+
+> The current implementation demonstrates the communication pattern and security boundary; it does not claim production-grade delivery guarantees yet.
 
 ---
 
-## 🔗 GitHub
+## 🧪 Testing
 
-[github.com/Garenafanclub/EmployeeManagement](https://github.com/Garenafanclub/EmployeeManagement)
+Run:
+
+```bash
+./gradlew test
+```
+
+The repository contains test scaffolding for the controller, repository, and service layers. Automated coverage for the full distributed notification workflow is still being expanded.
+
+The next high-value integration scenario is:
+
+```text
+employee creation
+    -> notification.requested
+    -> 202 Accepted
+    -> async processing
+    -> notification.completed
+    -> secured webhook
+    -> 200 OK
+```
+
+---
+
+## 🤝 Repository ecosystem
+
+This project is part of a small multi-repository backend system:
+
+- **Employee Management:** this repository
+- **Email Notification Service:** [`Garenafanclub/email-notification-service`](https://github.com/Garenafanclub/email-notification-service)
+
+The two repositories together demonstrate asynchronous service-to-service communication with webhook-based completion callbacks.
+
+---
+
+## 🤝 Contributing
+
+Contributions and improvements are welcome.
+
+Before opening a pull request:
+
+1. Create a focused feature branch.
+2. Keep the change scoped.
+3. Add or update tests where appropriate.
+4. Update documentation when behavior changes.
+5. Run:
+
+```bash
+./gradlew test
+```
+
+---
+
+## 👨‍💻 Author
+
+**Mayank**
+
+Built as a hands-on backend engineering project exploring:
+
+```text
+Spring Boot
++
+Spring Security
++
+JWT
++
+PostgreSQL
++
+Redis
++
+Async Processing
++
+Webhooks
++
+Service-to-Service Communication
++
+Distributed Systems
+```
+
+⭐ If you find the project useful, consider starring the repository.
